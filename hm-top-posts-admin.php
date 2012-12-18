@@ -85,7 +85,7 @@ function hmtp_top_posts_setting_admin_page() { ?>
 	<?php
 
 	$top_posts = new HMTP_Top_Posts();
-	$results = $top_posts->get_results() );
+	$results = $top_posts->get_results();
 
 	if ( $results ) : ?>
 

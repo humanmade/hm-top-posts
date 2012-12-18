@@ -38,12 +38,16 @@ class HMTP_Top_Posts {
 
 		$defaults = array(
 			'count' => 5,
-			'filter' => 'pagePath =~ ^' . str_replace( '/%postname%', '', get_option('permalink_structure') ) . '.*',
+			'filter' => null,
 			'taxonomy' => null,
 			'terms' => array(),
-			'start_date' => null, // 1 year ago
+			'start_date' => null,
+			'end_date' => null,
 			'post_type' => array( 'post' )
 		);
+
+		// If too many results - can filter results using permalink structure.
+		// 'pagePath =~ ^' . str_replace( '/%postname%', '', get_option('permalink_structure') ) . '.*'
 
 		$this->args = wp_parse_args( $this->args, $defaults );
 		$this->query_id = 'hmtp_' . hash( 'crc32', serialize( array_merge( $this->args, array( $this->profile_id ) ) ) );
@@ -97,7 +101,7 @@ class HMTP_Top_Posts {
 			if ( empty( $gaResults ) )
 				break;
 
-			foreach ( $ga->getResults() as $result  ) {
+			foreach ( $gaResults as $result  ) {
 
 				// Get the post id from the url
 				// Does not work for custom post types.
