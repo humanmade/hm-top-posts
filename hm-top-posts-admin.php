@@ -84,11 +84,19 @@ function hmtp_top_posts_setting_admin_page() { ?>
 
 	<?php
 
-		$top_posts = new HMTP_Top_Posts();
-		hm( $top_posts->get_results() );
+	$top_posts = new HMTP_Top_Posts();
+	$results = $top_posts->get_results() );
 
-	?>
+	if ( $results ) : ?>
 
+		<h4>Top Posts</h4>
+		<ul>
+			<?php foreach ( $results as $post_id => $views ) : ?>
+				<li><?php printf( '%s (%d)', get_the_title( $post_id ), $views ); ?>
+			<?php endforeach; ?>
+		</ul>
+
+	<?php endif; ?>
 
 <?php }
 
