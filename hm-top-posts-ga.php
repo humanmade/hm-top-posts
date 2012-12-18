@@ -105,7 +105,7 @@ class HMTP_Top_Posts {
 
 				// Get the post id from the url
 				// Does not work for custom post types.
-				$post_id = url_to_postid( str_replace( 'index.htm', '', (string) apply_filters( 'hmtp_result_url', $result ) ) );
+				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result ) ) );
 
 				// Does this top url even relate to a post at all?
 				// If your permalink structure clashes with page/category/tag structure it just might.
