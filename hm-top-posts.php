@@ -44,5 +44,7 @@ function hmtp_top_posts_error_messaages()
 	</div>
 	<?php
 
+	delete_option( 'hmtp_top_posts_error_message' );
+
 }
 add_action('admin_notices', 'hmtp_top_posts_error_messaages');
