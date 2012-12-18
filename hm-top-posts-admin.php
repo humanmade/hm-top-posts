@@ -21,7 +21,7 @@ add_action( 'admin_init', 'hmtp_top_posts_setting_admin_init' );
  * @return null
  */
 function hmtp_top_posts_setting_admin_menu() {
-	add_options_page( 'HM Top Posts', 'HM Top Posts', 'manage_options', 'hmtp_top_posts_setting', 'hmtp_top_posts_setting_admin_page' );
+	add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_top_posts_setting', 'hmtp_top_posts_setting_admin_page' );
 }
 add_action( 'admin_menu', 'hmtp_top_posts_setting_admin_menu' );
 
@@ -35,9 +35,9 @@ function hmtp_top_posts_setting_admin_page() { ?>
 
 	<div class="wrap">
 
-		<h2>HM Top Article Settings</h2>
+		<h2>Top Posts Settings</h2>
 
-		<p>In order to get top article data from Google Analytics, you need to enter a few details.</p>
+		<p>Top posts uses google analytics data. Enter your details below.</p>
 		<p>Your password is not saved, only used to generate an auth token.</p>
 
 		<form action="options.php" method="post">
