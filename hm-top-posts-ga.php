@@ -33,7 +33,7 @@ class HMTP_Top_Posts {
 		// Convert term names to IDs.
 		if ( ! empty( $this->args['terms'] ) )
 			foreach( $this->args['terms'] as &$term )
-				if ( ! is_int( $term ) )
+				if ( ! is_numeric( $term ) )
 					$term = get_term_by( 'name', $term, $this->args['taxonomy'] )->term_id;
 
 		$defaults = array(
