@@ -58,7 +58,7 @@ function hmtp_top_posts_setting_admin_page() { ?>
 			    </tr>
 
 			    <tr>
-				    <th>Username</th>
+				    <th>Email</th>
 			    	<td><input type="text" name="hmtp_top_posts_setting_username" value="<?php echo get_option( 'hmtp_top_posts_setting_username' ); ?>" class="regular-text"/></td>
 			    </tr>
 
@@ -132,9 +132,8 @@ function hmtp_top_posts_setting_option_sanitize( $password ) {
 	if ( empty( $password ) || ! $username )
 		return null;
 
-	$ga = new gapi( $username, $password );
-
 	try {
+		$ga = new gapi( $username, $password );
 		$auth_token = $ga->getAuthToken();
 		delete_option( 'hmtp_top_posts_error_message' );
 	} catch( Exception $e ){
