@@ -38,12 +38,12 @@ class HMTP_Top_Posts {
 
 		$defaults = array(
 			'count' => 5,
-			'filter' => null,
-			'taxonomy' => null,
-			'terms' => array(),
-			'start_date' => null,
-			'end_date' => null,
-			'post_type' => array( 'post' )
+			'filter' => null, // gapi filter
+			'taxonomy' => null, // (string) taxonomy to query by.
+			'terms' => array(), // array of terms to query by
+			'start_date' => null, // format YYYY-mm-dd
+			'end_date' => null, // format YYYY-mm-dd
+			'post_type' => array( 'post' ) // only supports post & page.
 		);
 
 		// If too many results - can filter results using permalink structure.
