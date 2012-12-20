@@ -5,7 +5,8 @@ add_action( 'save_post', 'hmtp_top_posts_optout_meta_box_save' );
 
 function hmtp_top_posts_optout_setup() {
 
-    add_meta_box(  'hmtp_top_posts_optout_meta_box', 'Top Posts Opt Out', 'hmtp_top_posts_optout_meta_box', 'post', 'normal' );
+	if ( get_option( 'hmtp_top_posts_allow_opt_out' ) )
+    	add_meta_box(  'hmtp_top_posts_optout_meta_box', 'Top Posts Opt Out', 'hmtp_top_posts_optout_meta_box', 'post', 'normal' );
 
 }
 
@@ -13,7 +14,7 @@ function hmtp_top_posts_optout_meta_box( $post, $metabox ) {  ?>
 
 	<label for="hmtp_top_posts_optout">
 		<input type="checkbox" id="hmtp_top_posts_optout" name="hmtp_top_posts_optout" <?php checked( get_post_meta( $post->ID, 'hmtp_top_posts_optout', true  ), 'on' ); ?>/>
-		Opt our of Top Post lists.
+		Opt out of Top Post lists.
 	</label>
 
 	<br />

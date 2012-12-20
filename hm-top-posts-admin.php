@@ -11,6 +11,7 @@ function hmtp_top_posts_setting_admin_init() {
 	register_setting( 'hmtp_top_posts_setting', 'hmtp_top_posts_setting_username' );
 	register_setting( 'hmtp_top_posts_setting', 'hmtp_top_posts_setting_password', 'hmtp_top_posts_setting_option_sanitize' );
 	register_setting( 'hmtp_top_posts_setting', 'hmtp_top_posts_setting_auth_delete', 'hmtp_top_posts_setting_option_auth_delete' );
+	register_setting( 'hmtp_top_posts_setting', 'hmtp_top_posts_allow_opt_out' );
 }
 add_action( 'admin_init', 'hmtp_top_posts_setting_admin_init' );
 
@@ -32,6 +33,13 @@ add_action( 'admin_menu', 'hmtp_top_posts_setting_admin_menu' );
  * @return null
  */
 function hmtp_top_posts_setting_admin_page() { ?>
+
+	<style>
+		#hmtp_top_posts_setting_existing th { text-align: left; vertical-align: top; width: 150px;  }
+		#hmtp_top_posts_setting_existing th,
+		#hmtp_top_posts_setting_existing td { padding-bottom: 10px; }
+
+	</style>
 
 	<div class="wrap">
 
@@ -59,17 +67,26 @@ function hmtp_top_posts_setting_admin_page() { ?>
 			    	<td><input type="password" name="hmtp_top_posts_setting_password" value="<?php echo get_option( 'hmtp_top_posts_setting_password' ); ?>"  class="regular-text"/></td>
 			    </tr>
 
-		<?php if ( $auth_code = get_option('hmtp_top_posts_setting_auth_code') ) : ?>
+				<?php if ( $auth_code = get_option('hmtp_top_posts_setting_auth_code') ) : ?>
 
-			    <tr>
-				    <th>Auth Code</th>
-			    	<td>
-			    		<textarea readonly="readonly" class="regular-text"><?php echo $auth_code; ?></textarea><br/>
-			    		<label><input type="checkbox" name="hmtp_top_posts_setting_auth_delete" /> Check box to delete auth code.</label>
-			    	</td>
-			    </tr>
+				    <tr>
+					    <th>Auth Code</th>
+				    	<td>
+				    		<input readonly="readonly" class="regular-text" value="<?php echo $auth_code; ?>" /><br/>
+				    		<label><input type="checkbox" name="hmtp_top_posts_setting_auth_delete" /> Check box to delete auth code.</label>
+				    	</td>
+				    </tr>
 
-		<?php endif; ?>
+				<?php endif; ?>
+
+
+				    <tr>
+					    <th>Enable Post opt-out.</th>
+				    	<td>
+				    		<label><input type="checkbox" name="hmtp_top_posts_allow_opt_out" <?php checked( 'on', get_option( 'hmtp_top_posts_allow_opt_out' ) ); ?> /> Allow opting out on a per post basis.</label>
+				    	</td>
+				    </tr>
+
 
 		</table>
 
