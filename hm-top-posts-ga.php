@@ -124,7 +124,10 @@ class HMTP_Top_Posts {
 					continue;
 
 				// Build an array of $post_id => $pageviews
-				$top_posts[ $post_id ] = $result->getPageviews();
+				$top_posts[$post_id] = array(
+					'post_id' => $post_id,
+					'views'   => $result->getPageviews(),
+				);
 
 				// Once we have enough posts we can break out of this.
 				if ( isset( $top_posts ) && count( $top_posts ) >= $this->args['count'] )

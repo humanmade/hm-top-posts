@@ -108,8 +108,8 @@ function hmtp_top_posts_setting_admin_page() { ?>
 
 		<h4>Top Posts</h4>
 		<ul>
-			<?php foreach ( $results as $post_id => $views ) : ?>
-				<li><?php printf( '%s (%d)', get_the_title( $post_id ), $views ); ?>
+			<?php foreach ( $results as $post ) : ?>
+				<li><?php printf( '%s (%d)', get_the_title( $post['post_id'] ), $post['views'] ); ?></li>
 			<?php endforeach; ?>
 		</ul>
 
