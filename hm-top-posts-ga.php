@@ -43,7 +43,8 @@ class HMTP_Top_Posts {
 			'terms' => array(), // array of terms to query by
 			'start_date' => null, // format YYYY-mm-dd
 			'end_date' => null, // format YYYY-mm-dd
-			'post_type' => array( 'post' ) // only supports post & page.
+			'post_type' => array( 'post' ), // only supports post & page.
+			'background_only' => true
 		);
 
 		// If too many results - can filter results using permalink structure.
@@ -56,14 +57,28 @@ class HMTP_Top_Posts {
 
 	function get_results() {
 
-		if ( $results = get_transient( $this->query_id ) )
+		if ( class_exists( 'TLC_Transient' ) ) {
+
+			if ( $this->args['background_only'] )
+				$results = tlc_transient( $this->query_id )->expires_in( 86400 )->background_only()->updates_with( array( $this, 'fetch_results' ) )->get();
+
+			else
+				$results = tlc_transient( $this->query_id )->expires_in( 86400 )->updates_with( array( $this, 'fetch_results' ) )->get();
+
 			return $results;
 
-		$results = $this->fetch_results();
+		} else {
 
-		set_transient( $this->query_id, $results, 86400 );
+			if ( $results = get_transient( $this->query_id ) )
+				return $results;
 
-		return $results;
+			$results = $this->fetch_results();
+
+			set_transient( $this->query_id, $results, 86400 );
+
+			return $results;
+		
+		}
 
 	}
 
