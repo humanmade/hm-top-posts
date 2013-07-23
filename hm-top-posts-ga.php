@@ -106,11 +106,12 @@ class HMTP_Top_Posts {
 		// Keeps going looping through - 30 results at a time - until there are either enough posts or no more results from GA.
 		$top_posts = array();
 		$start_index = 1;
+		$results_per_loop = ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) ) ? 1000 : 100;
 
 		while ( count( $top_posts ) < $this->args['count'] ) {
 
  			try {
-				$ga->requestReportData( $this->profile_id, $dimensions, $metrics, '-pageviews', $this->args['filter'], $this->args['start_date'], null, $start_index, 100 );
+				$ga->requestReportData( $this->profile_id, $dimensions, $metrics, '-pageviews', $this->args['filter'], $this->args['start_date'], null, $start_index, $results_per_loop );
 			} catch( Exception $e ) {
 				update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
 				return array();
@@ -134,7 +135,16 @@ class HMTP_Top_Posts {
 
 			$posts = $wpdb->get_results( "SELECT * FROM wp_posts WHERE post_name IN ( '". implode( '\', \'', array_keys( $post_names ) ) . "' ) AND post_type IN ( '" .  implode( '\', \'', $this->args['post_type'] ) . "' )" );
 
+			foreach ( $posts as $post )
+				$post_ids[] = (int) $post->ID;
+
 			$opt_outs = $wpdb->get_col( $wpdb->prepare( 'SELECT post_id FROM wp_postmeta WHERE meta_key = %s AND meta_value = %s', 'hmtp_top_posts_optout', 'on' ) );
+
+			if ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) )
+				$posts_in_terms = $wpdb->get_col(
+					"SELECT object_id FROM wp_term_taxonomy INNER JOIN wp_term_relationships ON wp_term_taxonomy.term_taxonomy_id=wp_term_relationships.term_taxonomy_id" .
+					" WHERE taxonomy IN ( '" . $this->args['taxonomy'] . "' ) AND term_id IN ( " . implode( ', ', $this->args['terms'] ) . " ) AND object_id IN ( " . implode( ', ', $post_ids ) . " )"
+				);
 
 			foreach ( $posts as $post ) {
 
@@ -142,7 +152,7 @@ class HMTP_Top_Posts {
 					continue;
 
 				// If taxonomy and terms supplied - check if there is any intersect between those terms and the post terms.
-				if ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) && 0 == count( array_intersect( wp_get_object_terms( $post->ID, $this->args['taxonomy'], array( 'fields' => 'ids') ), $this->args['terms'] ) ) )
+				if ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) && ! in_array( $post->ID, $posts_in_terms ) )
 					continue;
 
 				// Build an array of $post_id => $pageviews
@@ -156,7 +166,7 @@ class HMTP_Top_Posts {
 					break;
 			}
 
-			$start_index += 100;
+			$start_index += $results_per_loop;
 
 		}
 
