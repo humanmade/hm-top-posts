@@ -170,6 +170,10 @@ class HMTP_Top_Posts {
 
 		}
 
+		uasort( $top_posts, function( $a, $b ) {
+			return $a['views'] < $b['views'];
+		} );
+
 		return $top_posts;
 
 	}
