@@ -127,7 +127,7 @@ class HMTP_Top_Posts {
 			//get the post names from the urls being hit
 			foreach ( $gaResults as $result  ) {
 				$url = apply_filters( 'hmtp_result_url', (string) $result );
-				$url = sanitize_text_field( end( explode( '/', untrailingslashit( reset( explode( '?',  $url ) ) ) ) ) );
+				$url = esc_sql( sanitize_text_field( end( explode( '/', untrailingslashit( reset( explode( '?',  $url ) ) ) ) ) ) );
 
 				if ( $url )
 					$post_names[$url] = $result->getPageviews();
