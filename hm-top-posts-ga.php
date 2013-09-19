@@ -56,15 +56,15 @@ class HMTP_Top_Posts {
 
 	}
 
-	function get_results() {
+	function get_results( $expires = 86400 ) {
 
 		if ( class_exists( 'TLC_Transient' ) ) {
 
 			if ( $this->args['background_only'] )
-				$results = tlc_transient( $this->query_id )->expires_in( 86400 )->background_only()->updates_with( array( $this, 'fetch_results' ) )->get();
+				$results = tlc_transient( $this->query_id )->expires_in( $expires )->background_only()->updates_with( array( $this, 'fetch_results' ) )->get();
 
 			else
-				$results = tlc_transient( $this->query_id )->expires_in( 86400 )->updates_with( array( $this, 'fetch_results' ) )->get();
+				$results = tlc_transient( $this->query_id )->expires_in( $expires )->updates_with( array( $this, 'fetch_results' ) )->get();
 
 			return $results;
 
@@ -75,7 +75,7 @@ class HMTP_Top_Posts {
 
 			$results = $this->fetch_results();
 
-			set_transient( $this->query_id, $results, 86400 );
+			set_transient( $this->query_id, $results, $expires );
 
 			return $results;
 		
@@ -106,7 +106,8 @@ class HMTP_Top_Posts {
 		// Keeps going looping through - 30 results at a time - until there are either enough posts or no more results from GA.
 		$top_posts = array();
 		$start_index = 1;
-		$results_per_loop = ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) ) ? 1000 : 100;
+
+		$results_per_loop = ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) ) ? 1500 : 150;
 
 		while ( count( $top_posts ) < $this->args['count'] ) {
 
