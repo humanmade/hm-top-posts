@@ -107,7 +107,9 @@ class HMTP_Top_Posts {
 		$top_posts = array();
 		$start_index = 1;
 
-		$results_per_loop = ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) ) ? 1500 : 150;
+		$results_per_loop = $this->args['count'] * 2;
+
+		$this->args['filter'] = apply_filters( 'hmtp_ga_filter', $this->args['filter'], $this->args );
 
 		while ( count( $top_posts ) < $this->args['count'] ) {
 
