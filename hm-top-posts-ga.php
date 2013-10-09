@@ -42,6 +42,7 @@ class HMTP_Top_Posts {
 			'filter' => null, // gapi filter
 			'taxonomy' => null, // (string) taxonomy to query by.
 			'terms' => array(), // array of terms to query by
+			'term_operator' => '||',
 			'start_date' => null, // format YYYY-mm-dd
 			'end_date' => null, // format YYYY-mm-dd
 			'post_type' => array( 'post' ), // only supports post & page.
