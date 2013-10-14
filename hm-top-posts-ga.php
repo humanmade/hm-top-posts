@@ -46,7 +46,7 @@ class HMTP_Top_Posts {
 			'start_date' => null, // format YYYY-mm-dd
 			'end_date' => null, // format YYYY-mm-dd
 			'post_type' => array( 'post' ), // only supports post & page.
-			'background_only' => true
+			'background_only' => false
 		);
 
 		// If too many results - can filter results using permalink structure.
