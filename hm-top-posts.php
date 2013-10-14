@@ -48,3 +48,26 @@ function hmtp_top_posts_error_messaages()
 
 }
 add_action('admin_notices', 'hmtp_top_posts_error_messaages');
+
+//new method, cron update top posts view count in post meta
+add_action( 'init', function() {
+
+	if ( wp_next_scheduled( 'hmtp_update_post_view_count' ) )
+		return;
+
+	//todo: set time of day with low traffic
+	wp_schedule_event( time(), 'daily', 'hmtp_update_post_view_count' );
+} );
+
+
+add_action( 'hmtp_update_post_view_count', function() {
+
+	$tp = new HMTP_Top_Posts();
+
+	$hard_refresh = ( get_option( 'hmtp_last_updated_post_views', false ) ) ? false : true;
+
+	$tp->update_post_view_counts( $hard_refresh );
+
+	update_option( 'hmtp_last_updated_post_views', time() );
+
+} );
