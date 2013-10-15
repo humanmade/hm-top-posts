@@ -1,14 +1,3 @@
-hm-top-posts
-==================
+## Contribution guidelines ##
 
-## primary-contact   
-
-Matthew Haynes-Young   
-
-@mattheu
-
-## secondary-contact  
-
--   
-
--
+see https://github.com/humanmade/hm-top-posts/blob/master/CONTRIBUTING.md
