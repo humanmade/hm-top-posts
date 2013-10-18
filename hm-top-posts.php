@@ -50,6 +50,7 @@ function hmtp_top_posts_error_messaages()
 add_action('admin_notices', 'hmtp_top_posts_error_messaages');
 
 //new method, cron update top posts view count in post meta
+
 add_action( 'init', function() {
 
 	if ( wp_next_scheduled( 'hmtp_update_post_view_count' ) )
