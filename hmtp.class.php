@@ -25,7 +25,7 @@ class HMTP_Top_Posts {
 		'filter' => null, // gapi filter
 		'taxonomy' => null, // (string) taxonomy to query by.
 		'terms' => array(), // array of terms to query by
-		'start_date' => date( 'Y-m-d', time() - 2628000 ), // format YYYY-mm-dd. 1 month ago.
+		'start_date' => null, // format YYYY-mm-dd. 1 month ago.
 		'end_date' => null, // format YYYY-mm-dd
 		'post_type' => array( 'post' ), // only supports post & page.
 	);
@@ -34,6 +34,9 @@ class HMTP_Top_Posts {
 	private $ga_property_profile_id;
 
 	function __construct( $ga_property_profile_id, Google_AnalyticsService $analytics ) {
+
+		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - 2628000 );
+		$this->args_defaults['end_date']   = date( 'Y-m-d', time() );
 
 		$this->ga_property_profile_id = $ga_property_profile_id;
 		$this->analytics = $analytics;
