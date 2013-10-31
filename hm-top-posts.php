@@ -23,6 +23,7 @@ class HMTP_Plugin {
 	private $settings = null;
 	private $ga_client;
 	private $ga_service;
+	private $top_posts;
 
 	private $admin;
 
@@ -33,7 +34,11 @@ class HMTP_Plugin {
 			array(
 				'ga_property_id'         => null,
 				'ga_property_account_id' => null,
-				'ga_property_profile_id' => null
+				'ga_property_profile_id' => null,
+				'ga_client_id'           => null,
+				'ga_client_secret'       => null,
+				'ga_api_key'             => null,
+				'ga_redirect_url'        => null,
 			) 
 		);
 
@@ -45,10 +50,10 @@ class HMTP_Plugin {
 
 		// Visit https://code.google.com/apis/console?api=analytics to generate your
 		// client id, client secret, and to register your redirect uri.
-		$this->ga_client->setClientId( '6382807459.apps.googleusercontent.com' );
-		$this->ga_client->setClientSecret( '4spDtOoNgvqCJKbO1xOOIx5x' );
-		$this->ga_client->setRedirectUri( 'http://matth.eu/' );
-		$this->ga_client->setDeveloperKey( 'AIzaSyAti-s1WQIiNdxssT33k3zBjdD4RqHvd1Y' );
+		$this->ga_client->setClientId( $this->settings['ga_client_id'] );
+		$this->ga_client->setClientSecret( $this->settings['ga_client_secret'] );
+		$this->ga_client->setDeveloperKey( $this->settings['ga_api_key'] );
+		$this->ga_client->setRedirectUri( $this->settings['ga_redirect_url']  );
 		$this->ga_client->setUseObjects( true );
 			
 		if ( $this->token )

@@ -53,7 +53,7 @@ class HMTP_Top_Posts {
 				if ( ! is_numeric( $term ) )
 					$term = get_term_by( 'name', $term, $args['taxonomy'] )->term_id;
 
-		$this->query_id = 'hmtp_' . hash( 'md5', $this->profile_id . json_encode( $args ) );
+		$this->query_id = 'hmtp_' . hash( 'md5', $this->ga_property_profile_id . json_encode( $args ) );
 		
 		// If TLC Transients exists, use that.
 		if ( class_exists( 'TLC_Transient' ) ) {
@@ -114,12 +114,11 @@ class HMTP_Top_Posts {
 			
 			}
 
-			if ( empty( $results ) )
+			if ( count( $results->getRows() < 1 ) )
 				break;
 
 			foreach ( $results->getRows() as $result  ) {
-				
-				hm( $result );
+					
 				// Get the post id from the url
 				// Does not work for custom post types.
 				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );

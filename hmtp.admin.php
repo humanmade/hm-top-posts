@@ -9,10 +9,10 @@ class HMTP_Admin {
 	 */
 	protected static $_instance = null;
 	
-	protected static $ga_client = null;
-	protected static $ga_service = null;
-	protected static $ga_property_account_id = null;
-	protected static $ga_property_id = null;
+	private $ga_client = null;
+	private $ga_service = null;
+	private $ga_property_account_id = null;
+	private $ga_property_id = null;
 
 	public function __construct( $settings, Google_Client $ga_client, Google_AnalyticsService $ga_analytics ) {
 		
@@ -39,7 +39,7 @@ class HMTP_Admin {
 		// Deauthenticate.
 		if ( isset( $_GET['hmtp_deauth'] ) && wp_verify_nonce( $_GET['hmtp_deauth'], 'hmtp_deauth' ) ) {
 			
-			delete_option( 'hmtp_setting' );
+			delete_option( 'hmtp_ga_token' );
 			
 			wp_safe_redirect( add_query_arg( 
 				array( 'page' => 'hmtp_settings_page' ), 
@@ -67,13 +67,20 @@ class HMTP_Admin {
 		);
 
 		add_settings_field(
+			'hmtp_settings_auth',
+			'Auth Settings',
+			array( $this, 'hmtp_settings_field_auth_display' ),
+			'hmtp_settings_page',
+			'hmtp_settings_section'
+		);
+
+		add_settings_field(
 			'hmtp_settings_property',
 			'Select Web Property',
 			array( $this, 'hmtp_settings_field_property_display' ),
 			'hmtp_settings_page',
 			'hmtp_settings_section'
 		);
-
 
 	}
 
@@ -86,19 +93,10 @@ class HMTP_Admin {
         <form action="options.php" method="POST">
 			
 			<?php
-			
-			if ( ! $this->ga_client->getAccessToken() ) {
 
-				$authUrl = $this->ga_client->createAuthUrl();
-				echo '<p><a class="button-primary" href="' . esc_url( $authUrl ) . '">Authenticate with Google</a></p>';
-
-			} else {
-
-				settings_fields('hmtp_settings');	
-				do_settings_sections('hmtp_settings_page');
-				submit_button();
-
-			}
+			settings_fields('hmtp_settings');	
+			do_settings_sections('hmtp_settings_page');
+			submit_button();
 
 			?>
 
@@ -109,15 +107,18 @@ class HMTP_Admin {
 		// Demo.
 		$results = hmtp_get_top_posts( array() );
 		
-		if ( $results ) : ?>
-
-			<h4>Top Posts</h4>
+		?>
+		
+		<h4>Top Posts</h4>
+		
+		<?php if ( $results ) : ?>
 			<ul>
 				<?php foreach ( $results as $post ) : ?>
 					<li><?php printf( '%s (%d)', get_the_title( $post['post_id'] ), $post['views'] ); ?></li>
 				<?php endforeach; ?>
 			</ul>
-
+		<?php else : ?>
+			<p>No posts found</p>
 		<?php endif;
 
 	}
@@ -127,9 +128,27 @@ class HMTP_Admin {
 
 	public function hmtp_settings_field_property_display() {
 
+		if ( ! $this->settings['ga_client_id'] || ! $this->settings['ga_client_secret'] || ! $this->settings['ga_api_key'] || ! $this->settings['ga_redirect_url'] ) {
+
+			echo '<p>Please provide your Google API access details</p>';
+			return;
+
+		}
+
+		if ( ! $this->ga_client->getAccessToken() ) {
+		
+			printf( 
+				'<p><a class="button" href="%s">Authenticate with Google</a></p>', 
+				esc_url( $this->ga_client->createAuthUrl() )
+			);
+
+			return;
+		
+		}
+
 		$props = $this->ga_service->management_webproperties->listManagementWebproperties("~all");
 		
-		$deauth_url = wp_nonce_url(  add_query_arg(), 'hmtp_deauth', 'hmtp_deauth' );
+		$deauth_url = wp_nonce_url( add_query_arg( array() ), 'hmtp_deauth', 'hmtp_deauth' );
 
 		?>
 
@@ -162,6 +181,25 @@ class HMTP_Admin {
 
 	}
 
+	public function hmtp_settings_field_auth_display() {
+
+		?>
+
+		<style>
+			.hmtp_auth_fields label { display: inline-block; width: 100px; margin-right: 10px; }
+		</style>
+
+		<div class="hmtp_auth_fields">
+			<p><label>Client ID</label>     <input type="text" id="hmtp_setting-ga_client_id"     name="hmtp_setting[ga_client_id]"     value="<?php echo esc_attr( $this->settings['ga_client_id'] ); ?>"/></p>
+			<p><label>Client Secret</label> <input type="text" id="hmtp_setting-ga_client_secret" name="hmtp_setting[ga_client_secret]" value="<?php echo esc_attr( $this->settings['ga_client_secret'] ); ?>"/></p>
+			<p><label>API Key</label>       <input type="text" id="hmtp_setting-ga_api_key"       name="hmtp_setting[ga_api_key]"       value="<?php echo esc_attr( $this->settings['ga_api_key'] ); ?>"/></p>
+			<p><label>Redirect URL</label>  <input type="text" id="hmtp_setting-ga_redirect_url"  name="hmtp_setting[ga_redirect_url]"  value="<?php echo esc_attr( $this->settings['ga_redirect_url'] ); ?>"/></p>
+			<p>Visit <a href="https://code.google.com/apis/console?api=analytics">https://code.google.com/apis/console?api=analytics</a> to generate your client id, client secret, and to register your redirect uri.</p>
+		</div>
+		<?php
+
+	}
+
 	/**
 	 * Process input.
 	 * 
@@ -170,7 +208,7 @@ class HMTP_Admin {
 	 */
 	public function hmtp_settings_sanitize( $input ) {
 		
-		if ( $input['ga_property_account_id'] ) {
+		if ( isset( $input['ga_property_account_id'] ) ) {
 			
 			try {			
 				
