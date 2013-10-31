@@ -9,42 +9,123 @@ Author URI: http://hmn.md
 
 define( 'HMTP_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
-if ( defined( 'HMTP_DISABLE_GA_TOP_POSTS' ) && HMTP_DISABLE_GA_TOP_POSTS )
-	return;
+require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/Google_Client.php';
+require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/contrib/Google_AnalyticsService.php';
 
-// The google analytics helper class.
-if( ! class_exists( 'gapi' ) )
- 	require_once( 'gapi.class.php' );
+require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
+require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
 
-// All the admin settings pages.
-require_once( 'hm-top-posts-admin.php' );
+HMTP_Plugin::get_instance();
 
-// Meta box to allow authors from opting out of top posts.
-require_once( 'hm-top-posts-opt-out.php' );
+class HMTP_Plugin {
 
-// Get Top Posts from google analytics.
-require_once( 'hm-top-posts-ga.php' );
+	private static $instance = null;
+	private $settings = null;
+	private $ga_client;
+	private $ga_service;
 
-/**
- * If there has been an error - show our message
- */
-function hmtp_top_posts_error_messaages()
-{
+	private $admin;
 
-	$error = get_option( 'hmtp_top_posts_error_message' );
+	private function __construct() {
 
-    if ( ! current_user_can('administrator' ) || ! $error )
-    	return;
+		$this->settings = wp_parse_args( 
+			get_option( 'hmtp_setting', array() ), 
+			array(
+				'ga_property_id'         => null,
+				'ga_property_account_id' => null,
+				'ga_property_profile_id' => null
+			) 
+		);
 
- 	$message = '<strong>Top Posts by Google Analytics Error: ' . $error . '</strong>';
+		$this->token = get_option( 'hmtp_ga_token' );
+		
+		$this->ga_client = new Google_Client();
 
-	?>
-	<div id="message" class="error">
-		<p><?php echo $message; ?></p>
-	</div>
-	<?php
+		$this->ga_client->setApplicationName("WP Top Posts by GA");
 
-	delete_option( 'hmtp_top_posts_error_message' );
+		// Visit https://code.google.com/apis/console?api=analytics to generate your
+		// client id, client secret, and to register your redirect uri.
+		$this->ga_client->setClientId( '6382807459.apps.googleusercontent.com' );
+		$this->ga_client->setClientSecret( '4spDtOoNgvqCJKbO1xOOIx5x' );
+		$this->ga_client->setRedirectUri( 'http://matth.eu/' );
+		$this->ga_client->setDeveloperKey( 'AIzaSyAti-s1WQIiNdxssT33k3zBjdD4RqHvd1Y' );
+		$this->ga_client->setUseObjects( true );
+			
+		if ( $this->token )
+			$this->ga_client->setAccessToken( $this->token );
+
+		$this->ga_service = new Google_AnalyticsService( $this->ga_client );
+
+		add_action( 'init', array( $this, 'init' ) );
+
+		$this->admin     = new HMTP_Admin( $this->settings, $this->ga_client, $this->ga_service );
+		
+		if ( $this->settings['ga_property_profile_id'] )
+			$this->top_posts = new HMTP_Top_Posts( $this->settings['ga_property_profile_id'], $this->ga_service );
+	
+	}
+	
+	/**
+     * Creates or returns an instance of this class.
+     *
+     * @return  A single instance of this class.
+     */
+	public static function get_instance() {
+ 
+        if ( null == self::$instance ) {
+            self::$instance = new self;
+        }
+ 
+        return self::$instance;
+ 
+    }
+
+	/**
+	 * Handle the authentication & redirect to the admin.
+	 * 
+	 * @return null.
+	 * @todo nonce
+	 */
+	public function init() {
+		
+		if ( ! current_user_can( 'manage_options' ) )
+			return;
+
+		// Authenticate.
+		if ( isset( $_GET['code'] ) ) {
+			
+			$this->ga_client->authenticate();
+			update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
+			
+			wp_safe_redirect( add_query_arg( 
+				array( 'page' => 'hmtp_settings_page' ), 
+				get_admin_url() . 'options-general.php'
+			) );
+
+			exit;
+		}
+
+	}
+
+	public function get_results( Array $args = array() ) {
+
+		if ( ! $this->top_posts )
+			return array();
+
+		return $this->top_posts->get_results( $args );
+
+	}
 
 }
-add_action('admin_notices', 'hmtp_top_posts_error_messaages');
+
+/**
+ * Get Top Posts.
+ * 
+ * @param  array $args
+ * @return array or top posts.
+ */
+function hmtp_get_top_posts( Array $args = array() ) {
+
+	return HMTP_Plugin::get_instance()->get_results( $args );
+	
+}
