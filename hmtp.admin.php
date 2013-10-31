@@ -162,27 +162,31 @@ class HMTP_Admin {
 				<input type="hidden" name="hmtp_setting[ga_property_id]" value="<?php echo $this->settings['ga_property_id']; ?>" />
 				<input type="hidden" name="hmtp_setting[ga_access_token]" value="<?php echo esc_attr( json_encode( $this->settings['ga_access_token'] ) ); ?>" />
 				<input type="hidden" name="hmtp_setting[ga_property_profile_id]" value="<?php echo $this->settings['ga_property_profile_id']; ?>" />
-									
-				<select name="hmtp_setting[ga_property_account_id]">
-						
-					<option value="0">Select a property</option>
+				
+				<p>			
+					<select name="hmtp_setting[ga_property_account_id]">
+							
+						<option value="0">Select a property</option>
 
-					<?php 
+						<?php 
 
-					foreach ( $props->items as $property ) {
-						printf( 
-							'<option value="%s" %s>%s</option>', 
-							$property->accountId,
-							selected( $property->accountId, $this->settings['ga_property_account_id'], false ),
-							$property->name
-						);
-					}
+						foreach ( $props->items as $property ) {
+							printf( 
+								'<option value="%s" %s>%s</option>', 
+								$property->accountId,
+								selected( $property->accountId, $this->settings['ga_property_account_id'], false ),
+								$property->name
+							);
+						}
 
-					?>
+						?>
 
-				</select>
+					</select>
+				</p>
 
-				<a class="button" href="<?php echo esc_url( $deauth_url ); ?>">Deauthorize</a>
+				<p>
+					<a class="button" href="<?php echo esc_url( $deauth_url ); ?>">Deauthorize</a>
+				</p>
 			
 			<?php
 
