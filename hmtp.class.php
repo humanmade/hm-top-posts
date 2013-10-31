@@ -90,8 +90,6 @@ class HMTP_Top_Posts {
 
 		while ( count( $top_posts ) < $args['count'] ) {
 
-			sleep(1); // Note rate limit of 1 query per second.
-
 			try {
 				
 				$results = $this->analytics->data_ga->get(
@@ -114,11 +112,11 @@ class HMTP_Top_Posts {
 			
 			}
 
-			if ( count( $results->getRows() < 1 ) )
+			if ( count( $results->getRows() ) < 1 )
 				break;
 
 			foreach ( $results->getRows() as $result  ) {
-					
+				
 				// Get the post id from the url
 				// Does not work for custom post types.
 				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );
@@ -152,6 +150,8 @@ class HMTP_Top_Posts {
 			}
 
 			$start_index += $max_results;
+
+			sleep(1); // Note rate limit of 1 query per second.
 
 		}
 
