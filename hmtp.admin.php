@@ -107,10 +107,18 @@ class HMTP_Admin {
 			'hmtp_settings_section'
 		);
 
+		add_settings_field(
+			'hmtp_settings_allow_opt_out',
+			'Allow Opt-Out',
+			array( $this, 'hmtp_settings_field_opt_out_display' ),
+			'hmtp_settings_page',
+			'hmtp_settings_section'
+		);
+
 	}
 
 	public function settings_page() {
-		
+
 		?>
 
         <form action="options.php" method="POST">
@@ -151,33 +159,26 @@ class HMTP_Admin {
 	<?php }
 
 	public function hmtp_settings_field_client_id_display() { ?>
-		<input type="text" id="hmtp_setting-ga_client_id"     name="hmtp_setting[ga_client_id]"     value="<?php echo esc_attr( $this->settings['ga_client_id'] ); ?>"/>
+		<input type="text" name="hmtp_setting[ga_client_id]"     value="<?php echo esc_attr( $this->settings['ga_client_id'] ); ?>"/>
 	<?php }
 	
 	public function hmtp_settings_field_client_secret_display() { ?>
-		<input type="text" id="hmtp_setting-ga_client_secret" name="hmtp_setting[ga_client_secret]" value="<?php echo esc_attr( $this->settings['ga_client_secret'] ); ?>"/>
+		<input type="text" name="hmtp_setting[ga_client_secret]" value="<?php echo esc_attr( $this->settings['ga_client_secret'] ); ?>"/>
 	<?php }
 	
 	public function hmtp_settings_field_api_key_display() { ?>
-		<input type="text" id="hmtp_setting-ga_api_key"       name="hmtp_setting[ga_api_key]"       value="<?php echo esc_attr( $this->settings['ga_api_key'] ); ?>"/>
+		<input type="text" name="hmtp_setting[ga_api_key]"       value="<?php echo esc_attr( $this->settings['ga_api_key'] ); ?>"/>
 	<?php }
 	
 	public function hmtp_settings_field_redirect_display() { ?>
-		<input type="text" id="hmtp_setting-ga_redirect_url"  name="hmtp_setting[ga_redirect_url]"  value="<?php echo esc_attr( $this->settings['ga_redirect_url'] ); ?>"/>
+		<input type="text" name="hmtp_setting[ga_redirect_url]"  value="<?php echo esc_attr( $this->settings['ga_redirect_url'] ); ?>"/>
 	<?php }
 
 	public function hmtp_settings_field_property_display() {
 
 		// Do not show the authenticate button or inputs if api details have not been added.
-		if ( 
-			! $this->settings['ga_client_id'] ||
-			! $this->settings['ga_client_secret'] ||
-			! $this->settings['ga_api_key'] ||
-			! $this->settings['ga_redirect_url']
-		) {
-		
+		if ( ! $this->settings['ga_client_id'] || ! $this->settings['ga_client_secret'] || ! $this->settings['ga_api_key'] || ! $this->settings['ga_redirect_url'] ) {
 			return;
-		
 		}
 
 		// Show authenticate button only. 
@@ -226,6 +227,10 @@ class HMTP_Admin {
 
 	}
 
+	public function hmtp_settings_field_opt_out_display() { ?>
+		<label><input type="checkbox" name="hmtp_setting[allow_opt_out]"  <?php checked( true, $this->settings['allow_opt_out'] ); ?>/> Allow excluding individual posts from Top Posts results.</label>
+	<?php }
+
 	/**
 	 * Process input.
 	 * 
@@ -233,6 +238,8 @@ class HMTP_Admin {
 	 * @return [type]        [description]
 	 */
 	public function hmtp_settings_sanitize( $input ) {
+		
+		$input['allow_opt_out'] = isset( $input['allow_opt_out'] );
 		
 		if ( isset( $input['ga_property_account_id'] ) ) {
 			

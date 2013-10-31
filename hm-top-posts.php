@@ -25,6 +25,7 @@ class HMTP_Plugin {
 	private $ga_client;
 	private $ga_service;
 	private $top_posts;
+	private $opt_out;
 
 	private $admin;
 
@@ -40,6 +41,7 @@ class HMTP_Plugin {
 				'ga_client_secret'       => null,
 				'ga_api_key'             => null,
 				'ga_redirect_url'        => null,
+				'allow_opt_out'          => false,
 			) 
 		);
 
@@ -68,6 +70,9 @@ class HMTP_Plugin {
 		
 		if ( $this->settings['ga_property_profile_id'] )
 			$this->top_posts = new HMTP_Top_Posts( $this->settings['ga_property_profile_id'], $this->ga_service );
+
+		if ( $this->settings['allow_opt_out'] )
+			$this->opt_out = HMTP_Opt_Out::get_instance();
 	
 	}
 	
