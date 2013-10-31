@@ -81,10 +81,10 @@ class HMTP_Top_Posts {
 		
 		$dimensions = array( 'pagePath' );
 		$metrics = array( 'pageviews' );
-		$max_results = 500;
+		$max_results = 1000;
 
 		// Build up a list of top posts.
-		// Keeps going looping through - 500 results at a time - until there are either enough posts or no more results from GA.
+		// Keeps going looping through - $max_results results at a time - until there are either enough posts or no more results from GA.
 		$top_posts = array();
 		$start_index = 1;
 
@@ -150,8 +150,6 @@ class HMTP_Top_Posts {
 			}
 
 			$start_index += $max_results;
-
-			sleep(1); // Note rate limit of 1 query per second.
 
 		}
 
