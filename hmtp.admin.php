@@ -67,14 +67,6 @@ class HMTP_Admin {
 		);
 
 		add_settings_field(
-			'hmtp_settings_auth',
-			'Auth Settings',
-			array( $this, 'hmtp_settings_field_auth_display' ),
-			'hmtp_settings_page',
-			'hmtp_settings_section'
-		);
-
-		add_settings_field(
 			'hmtp_settings_property',
 			'Select Web Property',
 			array( $this, 'hmtp_settings_field_property_display' ),
@@ -85,8 +77,6 @@ class HMTP_Admin {
 	}
 
 	public function settings_page() {
-		
-		// hm( $this->settings );
 		
 		?>
 
@@ -128,61 +118,6 @@ class HMTP_Admin {
 
 	public function hmtp_settings_field_property_display() {
 
-		if ( ! $this->settings['ga_client_id'] || ! $this->settings['ga_client_secret'] || ! $this->settings['ga_api_key'] || ! $this->settings['ga_redirect_url'] ) {
-
-			echo '<p>Please provide your Google API access details</p>';
-			return;
-
-		}
-
-		if ( ! $this->ga_client->getAccessToken() ) {
-		
-			printf( 
-				'<p><a class="button" href="%s">Authenticate with Google</a></p>', 
-				esc_url( $this->ga_client->createAuthUrl() )
-			);
-
-			return;
-		
-		}
-
-		$props = $this->ga_service->management_webproperties->listManagementWebproperties("~all");
-		
-		$deauth_url = wp_nonce_url( add_query_arg( array() ), 'hmtp_deauth', 'hmtp_deauth' );
-
-		?>
-
-		<input type="hidden" name="hmtp_setting[ga_property_id]" value="<?php echo $this->settings['ga_property_id']; ?>" />
-		<input type="hidden" name="hmtp_setting[ga_access_token]" value="<?php echo esc_attr( json_encode( $this->settings['ga_access_token'] ) ); ?>" />
-		<input type="hidden" name="hmtp_setting[ga_property_profile_id]" value="<?php echo $this->settings['ga_property_profile_id']; ?>" />
-							
-		<select name="hmtp_setting[ga_property_account_id]">
-				
-			<option value="0">Select a property</option>
-
-			<?php 
-
-			foreach ( $props->items as $property ) {
-				printf( 
-					'<option value="%s" %s>%s</option>', 
-					$property->accountId,
-					selected( $property->accountId, $this->settings['ga_property_account_id'], false ),
-					$property->name
-				);
-			}
-
-			?>
-
-		</select>
-
-		<a class="button" href="<?php echo esc_url( $deauth_url ); ?>">Deauthorize</a>
-	
-		<?php
-
-	}
-
-	public function hmtp_settings_field_auth_display() {
-
 		?>
 
 		<style>
@@ -196,7 +131,63 @@ class HMTP_Admin {
 			<p><label>Redirect URL</label>  <input type="text" id="hmtp_setting-ga_redirect_url"  name="hmtp_setting[ga_redirect_url]"  value="<?php echo esc_attr( $this->settings['ga_redirect_url'] ); ?>"/></p>
 			<p>Visit <a href="https://code.google.com/apis/console?api=analytics">https://code.google.com/apis/console?api=analytics</a> to generate your client id, client secret, and to register your redirect uri.</p>
 		</div>
+
 		<?php
+
+		// Do not show the authenticate button or inputs if api details have not been added.
+		if ( 
+			$this->settings['ga_client_id']  &&
+			$this->settings['ga_client_secret'] &&
+			$this->settings['ga_api_key'] &&
+			$this->settings['ga_redirect_url']
+		) :
+
+			// Show authenticate button only. 
+			if ( ! $this->ga_client->getAccessToken() ) :
+			
+				printf( 
+					'<p><a class="button" href="%s">Authenticate with Google</a></p>', 
+					esc_url( $this->ga_client->createAuthUrl() )
+				);
+
+			// If authenticated & api details are provided, show the property select field.
+			else :
+
+				$props = $this->ga_service->management_webproperties->listManagementWebproperties("~all");
+				
+				$deauth_url = wp_nonce_url( add_query_arg( array() ), 'hmtp_deauth', 'hmtp_deauth' );
+
+				?>
+
+				<input type="hidden" name="hmtp_setting[ga_property_id]" value="<?php echo $this->settings['ga_property_id']; ?>" />
+				<input type="hidden" name="hmtp_setting[ga_access_token]" value="<?php echo esc_attr( json_encode( $this->settings['ga_access_token'] ) ); ?>" />
+				<input type="hidden" name="hmtp_setting[ga_property_profile_id]" value="<?php echo $this->settings['ga_property_profile_id']; ?>" />
+									
+				<select name="hmtp_setting[ga_property_account_id]">
+						
+					<option value="0">Select a property</option>
+
+					<?php 
+
+					foreach ( $props->items as $property ) {
+						printf( 
+							'<option value="%s" %s>%s</option>', 
+							$property->accountId,
+							selected( $property->accountId, $this->settings['ga_property_account_id'], false ),
+							$property->name
+						);
+					}
+
+					?>
+
+				</select>
+
+				<a class="button" href="<?php echo esc_url( $deauth_url ); ?>">Deauthorize</a>
+			
+			<?php
+
+			endif;
+		endif;
 
 	}
 
