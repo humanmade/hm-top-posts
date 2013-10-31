@@ -15,6 +15,7 @@ require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/contrib/Google_Analyt
 require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
 require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
 require_once HMTP_PLUGIN_PATH . 'hmtp.opt-out.php';
+require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
 
 HMTP_Plugin::get_instance();
 
