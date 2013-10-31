@@ -25,7 +25,7 @@ class HMTP_Top_Posts {
 		'filter' => null, // gapi filter
 		'taxonomy' => null, // (string) taxonomy to query by.
 		'terms' => array(), // array of terms to query by
-		'start_date' => null, // format YYYY-mm-dd
+		'start_date' => date( 'Y-m-d', time() - 2628000 ), // format YYYY-mm-dd. 1 month ago.
 		'end_date' => null, // format YYYY-mm-dd
 		'post_type' => array( 'post' ), // only supports post & page.
 	);
@@ -94,7 +94,8 @@ class HMTP_Top_Posts {
 				
 				$results = $this->analytics->data_ga->get(
 					'ga:' . $this->ga_property_profile_id,
-					date( 'Y-m-d', time() - 2628000 ), // last 6 months
+					$args['start_date'],
+					$args['end_date'],
 					date( 'Y-m-d' ),
 					'ga:pageviews',
 			        array(
