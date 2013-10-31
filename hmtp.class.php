@@ -99,7 +99,6 @@ class HMTP_Top_Posts {
 					'ga:' . $this->ga_property_profile_id,
 					$args['start_date'],
 					$args['end_date'],
-					date( 'Y-m-d' ),
 					'ga:pageviews',
 			        array(
 			            'dimensions' => 'ga:pagePath',
