@@ -45,9 +45,9 @@ class HMTP_Opt_Out {
 			By checking this box, this article will not be shown in the Top/Most Read lists.
 		</span>
 
-		<?php echo wp_nonce_field( 'hmtp_top_posts_optout', 'hmtp_top_posts_optout_nonce' ); ?>
+		<?php wp_nonce_field( 'hmtp_top_posts_optout', 'hmtp_top_posts_optout_nonce' ); ?>
 
-		<?php
+	<?php
 	}
 
 	public function meta_box_save() {
