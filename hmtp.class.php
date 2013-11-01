@@ -2,7 +2,8 @@
 /**
  * Get Top Articles by Google Analytics.
  *
- * Get the results of the query stored for quiery_id. If it doesn't exist, a new one is generated based on $args.
+ * Get the results of the query stored for quiery_id. If it doesn't exist, 
+ * a new one is generated based on $args.
  * Retruns an array of  $post_id => $page_views.
  *
  * USAGE
@@ -31,14 +32,15 @@ class HMTP_Top_Posts {
 	);
 
 	private $analytics;
+	private $settings;
 	private $ga_property_profile_id;
 
-	function __construct( $ga_property_profile_id, Google_AnalyticsService $analytics ) {
+	function __construct( $settings, Google_AnalyticsService $analytics ) {
 
 		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - 2628000 );
 		$this->args_defaults['end_date']   = date( 'Y-m-d', time() );
 
-		$this->ga_property_profile_id = $ga_property_profile_id;
+		$this->settings = $settings;
 		$this->analytics = $analytics;
 
 		// If too many results - can filter results using permalink structure.
@@ -56,7 +58,7 @@ class HMTP_Top_Posts {
 				if ( ! is_numeric( $term ) )
 					$term = get_term_by( 'name', $term, $args['taxonomy'] )->term_id;
 
-		$this->query_id = 'hmtp_' . hash( 'md5', $this->ga_property_profile_id . json_encode( $args ) );
+		$this->query_id = 'hmtp_' . hash( 'md5', $this->settings['ga_property_profile_id'] . json_encode( $args ) );
 		
 		// If TLC Transients exists, use that.
 		if ( class_exists( 'TLC_Transient' ) ) {
@@ -87,7 +89,8 @@ class HMTP_Top_Posts {
 		$max_results = 1000;
 
 		// Build up a list of top posts.
-		// Keeps going looping through - $max_results results at a time - until there are either enough posts or no more results from GA.
+		// Keeps going looping through - $max_results results at a time -
+		// until there are either enough posts or no more results from GA.
 		$top_posts = array();
 		$start_index = 1;
 
@@ -96,7 +99,7 @@ class HMTP_Top_Posts {
 			try {
 				
 				$results = $this->analytics->data_ga->get(
-					'ga:' . $this->ga_property_profile_id,
+					'ga:' . $this->settings['ga_property_profile_id'],
 					$args['start_date'],
 					$args['end_date'],
 					'ga:pageviews',
@@ -118,31 +121,28 @@ class HMTP_Top_Posts {
 			if ( count( $results->getRows() ) < 1 )
 				break;
 
-			foreach ( $results->getRows() as $result  ) {
-				
-				// Get the post id from the url
-				// Does not work for custom post types.
-				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );
+			$posts = $this->get_posts_from_results( $results->getRows(), $args );
 
-				// Does this top url even relate to a post at all?
-				// If your permalink structure clashes with page/category/tag structure it just might.
-				if ( ! $post_id )
+			foreach ( $posts as $post  ) {
+
+				// Check the post type is one of the ones we want.
+				if ( ! in_array( get_post_type( $post['post_id'] ), $args['post_type'] ) )
 					continue;
 
-				// This can get confusing if we don't pass explicit post types. Who knows what GA will come up with.
-				if ( ! in_array( get_post_type( $post_id ), $args['post_type'] ) )
+				// Check this post is not excluded from results.
+				if ( get_post_meta( $post['post_id'], 'hmtp_top_posts_optout', true  ) )
 					continue;
 
-				if ( get_post_meta( $post_id, 'hmtp_top_posts_optout', true  ) )
-					continue;
-
-				// // If taxonomy and terms supplied - check if theyre is any intersect between those terms and the post terms.
-				if ( ! is_null( $args['taxonomy'] ) && ! empty( $args['terms'] ) && 0 == count( array_intersect( wp_get_object_terms( $post_id, $args['taxonomy'], array( 'fields' => 'ids') ), $args['terms'] ) ) )
-					continue;
+				// If taxonomy and terms supplied - check if theyre is any intersect between those terms and the post terms.
+				if ( ! empty( $args['taxonomy'] ) && ! empty( $args['terms'] ) ) {
+					$object_terms = wp_get_object_terms( $post['post_id'], $args['taxonomy'], array( 'fields' => 'ids') );
+					if ( ! count( array_intersect( $object_terms, $args['terms'] ) ) )
+						continue;
+				}
 
 				// Build an array of $post_id => $pageviews
-				$top_posts[$post_id] = array(
-					'post_id' => $post_id,
+				$top_posts[$post['post_id']] = array(
+					'post_id' => $post['post_id'],
 					'views'   => $result[1],
 				);
 
@@ -157,6 +157,58 @@ class HMTP_Top_Posts {
 		}
 
 		return $top_posts;
+
+	}
+
+	/**
+	 *  Proccess the analytics query results and return post id and pageview count.
+	 *
+	 *	This is split into 
+	 * 
+	 * @param  [type] $results [description]
+	 * @return [type]          [description]
+	 */
+	function get_posts_from_results( $results, $args ) {
+		
+		$posts = array();
+
+		if ( $this->settings['no_url_to_postid'] ) {
+
+			$post_names = array();
+
+			foreach ( $results as &$result  ) {
+				
+				$url = apply_filters( 'hmtp_result_url', (string) $result );
+				$url = esc_sql( sanitize_text_field( end( explode( '/', untrailingslashit( reset( explode( '?',  $url ) ) ) ) ) ) );
+
+				if ( $url )
+					$result['post-name'] = ( empty( $post_names[$url] ) ) ? $result->getPageviews() : $post_names[$url] + $result->getPageviews();
+			
+			}
+
+			$post_names = array_map( function( $result ) { return $result['post-name'] }, $results );
+
+			global $wpdb;
+
+			// @todo prepare.
+			$posts = $wpdb->get_results( "SELECT ID, post_name FROM wp_posts WHERE post_name IN ( '". implode( '\', \'', array_keys( $post_names ) ) . "' ) ");
+
+		} else {
+
+			foreach ( $results as $result  ) {
+					
+				// Get the post id from the url
+				// Does not work for custom post types.
+				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );
+
+				if ( $post_id )
+					$posts[$post_id] = array( 'post_id' => $post_id, 'views' => $result[1] );
+
+			}
+
+		}
+
+		return $posts;
 
 	}
 

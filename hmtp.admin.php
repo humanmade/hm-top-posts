@@ -115,6 +115,22 @@ class HMTP_Admin {
 			'hmtp_settings_section'
 		);
 
+		add_settings_field(
+			'hmtp_settings_no_url_to_postid',
+			'Don\t use url_to_postid',
+			array( $this, 'hmtp_settings_field_no_url_to_postid' ),
+			'hmtp_settings_page',
+			'hmtp_settings_section'
+		);
+
+		add_settings_field(
+			'hmtp_settings_do_cron',
+			'Do Cron',
+			array( $this, 'hmtp_settings_field_do_cron_display' ),
+			'hmtp_settings_page',
+			'hmtp_settings_section'
+		);
+
 	}
 
 	public function settings_page() {
@@ -178,6 +194,7 @@ class HMTP_Admin {
 
 		// Do not show the authenticate button or inputs if api details have not been added.
 		if ( ! $this->settings['ga_client_id'] || ! $this->settings['ga_client_secret'] || ! $this->settings['ga_api_key'] || ! $this->settings['ga_redirect_url'] ) {
+			echo '<p>You must provide google API access details.</p>';
 			return;
 		}
 
@@ -231,6 +248,14 @@ class HMTP_Admin {
 		<label><input type="checkbox" name="hmtp_setting[allow_opt_out]"  <?php checked( true, $this->settings['allow_opt_out'] ); ?>/> Allow excluding individual posts from Top Posts results.</label>
 	<?php }
 
+	public function hmtp_settings_field_no_url_to_postid_display() { ?>
+		<label><input type="checkbox" name="hmtp_setting[no_url_to_postid]"  <?php checked( true, $this->settings['no_url_to_postid'] ); ?>/> Single post lookup query. More performant, but less robust. Requires that post-name is included in url.</label>
+	<?php }
+
+	public function hmtp_settings_field_do_cron_display() { ?>
+		<label><input type="checkbox" name="hmtp_setting[do_cron]"  <?php checked( true, $this->settings['do_cron'] ); ?>/> Run analytics query daily and store data as post meta.</label>
+	<?php }
+
 	/**
 	 * Process input.
 	 * 
@@ -239,9 +264,21 @@ class HMTP_Admin {
 	 */
 	public function hmtp_settings_sanitize( $input ) {
 		
-		$input['allow_opt_out'] = isset( $input['allow_opt_out'] );
+		$r = array();
+
+		$r['ga_client_id']     = $input['ga_client_id'];
+		$r['ga_client_secret'] = $input['ga_client_secret'];
+		$r['ga_api_key']       = $input['ga_api_key'];
+		$r['ga_redirect_url']  = $input['ga_redirect_url'];
 		
-		if ( isset( $input['ga_property_account_id'] ) ) {
+		$r['allow_opt_out']          = isset( $input['allow_opt_out'] );
+		$r['ga_property_account_id'] = $input['ga_property_account_id'];
+		
+		$r['allow_opt_out'] = isset( $input['allow_opt_out'] );
+		$r['no_url_to_postid'] = isset( $input['no_url_to_postid'] );
+		$r['do_cron']       = isset( $input['do_cron'] );
+
+		if ( ! empty( $input['ga_property_account_id'] ) ) {
 			
 			try {			
 				
@@ -250,27 +287,26 @@ class HMTP_Admin {
 				if ( count( $properties->getItems() ) < 1 )
 					throw new Exception( 'Property not found' );
 
-				$input['ga_property_id'] = $properties->getItems()[0]->getId();
+				$r['ga_property_id'] = $properties->getItems()[0]->getId();
 				
-				// Not so sure about this...
-				$input['ga_access_token'] = json_decode( htmlspecialchars_decode( $input['ga_access_token'] ) );
-      		
       			$profiles = $this->ga_service->management_profiles->listManagementProfiles( $input['ga_property_account_id'], $input['ga_property_id'] );
 
       			if ( count( $profiles->getItems() ) < 0 )
       				throw new Exception('Property not found' );
 				
 				$items = (array) $profiles->getItems();
-				$input['ga_property_profile_id'] = reset( $items )->getId();
+				$r['ga_property_profile_id'] = reset( $items )->getId();
 			
 			} catch( Exception $e ) {
-				
-				return false;
+				hm_log( $e );
+				return $r;
 			}
 
 		}
 
-    	return $input;
+		hm_log( $r );
+
+    	return $r;
 
 	}
 

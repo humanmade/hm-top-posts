@@ -43,7 +43,9 @@ class HMTP_Plugin {
 				'ga_api_key'             => null,
 				'ga_redirect_url'        => null,
 				'allow_opt_out'          => false,
-			) 
+				'lookup_method'          => false,
+				'do_cron'                => false
+			)
 		);
 
 		$this->token = get_option( 'hmtp_ga_token' );
@@ -70,7 +72,7 @@ class HMTP_Plugin {
 		$this->admin     = new HMTP_Admin( $this->settings, $this->ga_client, $this->ga_service );
 		
 		if ( $this->settings['ga_property_profile_id'] )
-			$this->top_posts = new HMTP_Top_Posts( $this->settings['ga_property_profile_id'], $this->ga_service );
+			$this->top_posts = new HMTP_Top_Posts( $this->settings, $this->ga_service );
 
 		if ( $this->settings['allow_opt_out'] )
 			$this->opt_out = HMTP_Opt_Out::get_instance();
