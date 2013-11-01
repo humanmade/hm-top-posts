@@ -15,11 +15,23 @@
  */
 class HMTP_Top_Posts {
 
+	/**
+	 * @var string
+	 */
 	private $prefix = 'hmtp';
+	/**
+	 * @var int
+	 */
 	private $expiry = 86400; // $this->expiry one day.
 
+	/**
+	 * @var array
+	 */
 	private $args = array();
 
+	/**
+	 * @var array
+	 */
 	private $args_defaults = array(
 		'count'      => 5,
 		'filter'     => null, // gapi filter
@@ -30,9 +42,20 @@ class HMTP_Top_Posts {
 		'post_type'  => array( 'post' ), // only supports post & page.
 	);
 
+	/**
+	 * @var Google_AnalyticsService
+	 */
 	private $analytics;
+
+	/**
+	 * @var
+	 */
 	private $ga_property_profile_id;
 
+	/**
+	 * @param                         $ga_property_profile_id
+	 * @param Google_AnalyticsService $analytics
+	 */
 	function __construct( $ga_property_profile_id, Google_AnalyticsService $analytics ) {
 
 		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - 2628000 );
@@ -46,7 +69,13 @@ class HMTP_Top_Posts {
 
 	}
 
-	function get_results( Array $args ) {
+	/**
+	 * Get the results
+	 *
+	 * @param array $args
+	 * @return array|mixed
+	 */
+	function get_results( Array $args = array() ) {
 
 		$args = wp_parse_args( $args, $this->args_defaults );
 
@@ -82,6 +111,12 @@ class HMTP_Top_Posts {
 
 	}
 
+	/**
+	 * Fetch data from Google API
+	 *
+	 * @param array $args
+	 * @return array
+	 */
 	function fetch_results( $args ) {
 
 		$dimensions  = array( 'pagePath' );

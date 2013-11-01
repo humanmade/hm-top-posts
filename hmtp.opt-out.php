@@ -1,9 +1,20 @@
 <?php
 
+/**
+ * Class HMTP_Opt_Out
+ */
 class HMTP_Opt_Out {
 
+	/**
+	 * Instance of this class.
+	 *
+	 * @var
+	 */
 	private static $instance;
 
+	/**
+	 * Initialization
+	 */
 	private function __construct() {
 
 		add_action( 'add_meta_boxes', array( $this, 'setup' ) );
@@ -26,12 +37,21 @@ class HMTP_Opt_Out {
 
 	}
 
+	/**
+	 * Adds a metabox for the opt out setting
+	 */
 	public function setup() {
 
 		add_meta_box( 'hmtp_top_posts_optout_meta_box', 'Top Posts Opt Out', array( $this, 'meta_box' ), 'post', 'normal' );
 
 	}
 
+	/**
+	 * Display metabox fields
+	 *
+	 * @param $post
+	 * @param $metabox
+	 */
 	public function meta_box( $post, $metabox ) { ?>
 
 		<label for="hmtp_top_posts_optout">
@@ -50,6 +70,9 @@ class HMTP_Opt_Out {
 	<?php
 	}
 
+	/**
+	 * Save post data
+	 */
 	public function meta_box_save() {
 
 		global $post;
