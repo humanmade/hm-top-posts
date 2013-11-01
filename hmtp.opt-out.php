@@ -12,30 +12,30 @@ class HMTP_Opt_Out {
 	}
 
 	/**
-     * Creates or returns an instance of this class.
-     *
-     * @return  A single instance of this class.
-     */
+	 * Creates or returns an instance of this class.
+	 *
+	 * @return  A single instance of this class.
+	 */
 	public static function get_instance() {
- 
-        if ( null == self::$instance ) {
-            self::$instance = new self;
-        }
- 
-        return self::$instance;
- 
-    }
 
-	public function setup() {
+		if ( null == self::$instance ) {
+			self::$instance = new self;
+		}
 
-    	add_meta_box(  'hmtp_top_posts_optout_meta_box', 'Top Posts Opt Out', array( $this, 'meta_box' ), 'post', 'normal' );
+		return self::$instance;
 
 	}
 
-	public function meta_box( $post, $metabox ) {  ?>
+	public function setup() {
+
+		add_meta_box( 'hmtp_top_posts_optout_meta_box', 'Top Posts Opt Out', array( $this, 'meta_box' ), 'post', 'normal' );
+
+	}
+
+	public function meta_box( $post, $metabox ) { ?>
 
 		<label for="hmtp_top_posts_optout">
-			<input type="checkbox" id="hmtp_top_posts_optout" name="hmtp_top_posts_optout" <?php checked( get_post_meta( $post->ID, 'hmtp_top_posts_optout', true  ), 'on' ); ?>/>
+			<input type="checkbox" id="hmtp_top_posts_optout" name="hmtp_top_posts_optout" <?php checked( get_post_meta( $post->ID, 'hmtp_top_posts_optout', true ), 'on' ); ?>/>
 			Opt out of Top Post lists.
 		</label>
 
@@ -57,7 +57,7 @@ class HMTP_Opt_Out {
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
 			return;
 
-		if ( ! isset( $_POST['hmtp_top_posts_optout_nonce'] ) || ! wp_verify_nonce( $_POST['hmtp_top_posts_optout_nonce'], 'hmtp_top_posts_optout'  ) )
+		if ( ! isset( $_POST['hmtp_top_posts_optout_nonce'] ) || ! wp_verify_nonce( $_POST['hmtp_top_posts_optout_nonce'], 'hmtp_top_posts_optout' ) )
 			return;
 
 		if ( isset( $_POST['hmtp_top_posts_optout'] ) && $_POST['hmtp_top_posts_optout'] == 'on' )
