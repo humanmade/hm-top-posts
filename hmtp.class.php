@@ -15,57 +15,88 @@
  */
 class HMTP_Top_Posts {
 
+	/**
+	 * @var string
+	 */
 	private $prefix = 'hmtp';
+	/**
+	 * @var int
+	 */
 	private $expiry = 86400; // $this->expiry one day.
-	
+
+	/**
+	 * @var array
+	 */
 	private $args = array();
-	
+
+	/**
+	 * @var array
+	 */
 	private $args_defaults = array(
-		'count' => 5,
-		'filter' => null, // gapi filter
-		'taxonomy' => null, // (string) taxonomy to query by.
-		'terms' => array(), // array of terms to query by
+		'count'      => 5,
+		'filter'     => null, // gapi filter
+		'taxonomy'   => null, // (string) taxonomy to query by.
+		'terms'      => array(), // array of terms to query by
 		'start_date' => null, // format YYYY-mm-dd. 1 month ago.
-		'end_date' => null, // format YYYY-mm-dd
-		'post_type' => array( 'post' ), // only supports post & page.
+		'end_date'   => null, // format YYYY-mm-dd
+		'post_type'  => array( 'post' ), // only supports post & page.
 	);
 
+	/**
+	 * @var Google_AnalyticsService
+	 */
 	private $analytics;
+
+	/**
+	 * @var
+	 */
 	private $ga_property_profile_id;
 
+	/**
+	 * @param                         $ga_property_profile_id
+	 * @param Google_AnalyticsService $analytics
+	 */
 	function __construct( $ga_property_profile_id, Google_AnalyticsService $analytics ) {
 
 		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - 2628000 );
 		$this->args_defaults['end_date']   = date( 'Y-m-d', time() );
 
 		$this->ga_property_profile_id = $ga_property_profile_id;
-		$this->analytics = $analytics;
+		$this->analytics              = $analytics;
 
 		// If too many results - can filter results using permalink structure.
 		// 'pagePath =~ ^' . str_replace( '/%postname%', '', get_option('permalink_structure') ) . '.*'
 
 	}
 
-	function get_results( Array $args ) {
+	/**
+	 * Get the results
+	 *
+	 * @param array $args
+	 * @return array|mixed
+	 */
+	function get_results( Array $args = array() ) {
 
 		$args = wp_parse_args( $args, $this->args_defaults );
 
 		// Convert term names to IDs.
 		if ( ! empty( $args['terms'] ) )
-			foreach( $args['terms'] as &$term )
+			foreach ( $args['terms'] as &$term ) {
 				if ( ! is_numeric( $term ) )
 					$term = get_term_by( 'name', $term, $args['taxonomy'] )->term_id;
+			}
 
 		$this->query_id = 'hmtp_' . hash( 'md5', $this->ga_property_profile_id . json_encode( $args ) );
-		
+
 		// If TLC Transients exists, use that.
 		if ( class_exists( 'TLC_Transient' ) ) {
 			$results = tlc_transient( $this->query_id )->expires_in( $this->expiry )->background_only()->updates_with( array( $this, 'fetch_results' ), array( $args ) )->get();
 
 			return $results;
 
-		// Fall back to boring old normal transients.
-		} else {
+			// Fall back to boring old normal transients.
+		}
+		else {
 
 			if ( $results = get_transient( $this->query_id ) )
 				return $results;
@@ -75,51 +106,57 @@ class HMTP_Top_Posts {
 			set_transient( $this->query_id, $results, $this->expiry );
 
 			return $results;
-		
+
 		}
 
 	}
 
+	/**
+	 * Fetch data from Google API
+	 *
+	 * @param array $args
+	 * @return array
+	 */
 	function fetch_results( $args ) {
-		
-		$dimensions = array( 'pagePath' );
-		$metrics = array( 'pageviews' );
+
+		$dimensions  = array( 'pagePath' );
+		$metrics     = array( 'pageviews' );
 		$max_results = 1000;
 
 		// Build up a list of top posts.
 		// Keeps going looping through - $max_results results at a time - until there are either enough posts or no more results from GA.
-		$top_posts = array();
+		$top_posts   = array();
 		$start_index = 1;
 
 		while ( count( $top_posts ) < $args['count'] ) {
 
 			try {
-				
+
 				$results = $this->analytics->data_ga->get(
 					'ga:' . $this->ga_property_profile_id,
 					$args['start_date'],
 					$args['end_date'],
 					'ga:pageviews',
-			        array(
-			            'dimensions' => 'ga:pagePath',
-			            'sort' => '-ga:pageviews',
-			            'max-results' => $max_results,
-			            'start-index' => $start_index
-			        )
-			    );
+					array(
+						'dimensions'  => 'ga:pagePath',
+						'sort'        => '-ga:pageviews',
+						'max-results' => $max_results,
+						'start-index' => $start_index
+					)
+				);
 
-			} catch( Exception $e ) {
-				
+			} catch ( Exception $e ) {
+
 				update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
 				return;
-			
+
 			}
 
 			if ( count( $results->getRows() ) < 1 )
 				break;
 
-			foreach ( $results->getRows() as $result  ) {
-				
+			foreach ( $results->getRows() as $result ) {
+
 				// Get the post id from the url
 				// Does not work for custom post types.
 				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );
@@ -133,11 +170,11 @@ class HMTP_Top_Posts {
 				if ( ! in_array( get_post_type( $post_id ), $args['post_type'] ) )
 					continue;
 
-				if ( get_post_meta( $post_id, 'hmtp_top_posts_optout', true  ) )
+				if ( get_post_meta( $post_id, 'hmtp_top_posts_optout', true ) )
 					continue;
 
 				// // If taxonomy and terms supplied - check if theyre is any intersect between those terms and the post terms.
-				if ( ! is_null( $args['taxonomy'] ) && ! empty( $args['terms'] ) && 0 == count( array_intersect( wp_get_object_terms( $post_id, $args['taxonomy'], array( 'fields' => 'ids') ), $args['terms'] ) ) )
+				if ( ! is_null( $args['taxonomy'] ) && ! empty( $args['terms'] ) && 0 == count( array_intersect( wp_get_object_terms( $post_id, $args['taxonomy'], array( 'fields' => 'ids' ) ), $args['terms'] ) ) )
 					continue;
 
 				// Build an array of $post_id => $pageviews
