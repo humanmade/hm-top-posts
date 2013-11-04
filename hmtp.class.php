@@ -87,6 +87,7 @@ class HMTP_Top_Posts {
 		
 		// If TLC Transients exists, use that.
 		if ( class_exists( 'TLC_Transient' ) ) {
+			
 			$results = tlc_transient( $this->query_id )->expires_in( $this->expiry )->background_only()->updates_with( array( $this, 'fetch_results' ), array( $args ) )->get();
 
 			return $results;
@@ -150,7 +151,7 @@ class HMTP_Top_Posts {
 
 			usort( $posts, array( $this, 'posts_sort' ) );
 
-			foreach ( $posts as $post  ) {
+			foreach ( (array) $posts as $post  ) {
 
 				// Check the post type is one of the ones we want.
 				if ( ! in_array( get_post_type( $post['post_id'] ), $args['post_type'] ) )
@@ -197,6 +198,7 @@ class HMTP_Top_Posts {
 	 */
 	function get_posts_from_results( $results, $args ) {
 		
+		$posts = array();
 		$post_names = array();
 
 		if ( $this->settings['no_url_to_postid'] ) {
@@ -228,7 +230,6 @@ class HMTP_Top_Posts {
 				"SELECT ID, post_name FROM $wpdb->posts WHERE post_name IN ( $names ) AND post_status = 'publish' "
 			);
 
-			$posts = array();
 			foreach ( $query_results as $query_result ) {	
 
 				if ( array_key_exists( $query_result->post_name, $post_names ) )
