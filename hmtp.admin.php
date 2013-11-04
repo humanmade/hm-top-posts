@@ -151,7 +151,7 @@ class HMTP_Admin {
 		add_settings_field(
 			'hmtp_settings_no_url_to_postid',
 			'Don\t use url_to_postid',
-			array( $this, 'hmtp_settings_field_no_url_to_postid' ),
+			array( $this, 'hmtp_settings_field_no_url_to_postid_display' ),
 			'hmtp_settings_page',
 			'hmtp_settings_section'
 		);
