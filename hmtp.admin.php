@@ -202,19 +202,31 @@ class HMTP_Admin {
 			<input type="hidden" name="hmtp_setting[ga_access_token]" value="<?php echo esc_attr( json_encode( $this->settings['ga_access_token'] ) ); ?>" />
 			<input type="hidden" name="hmtp_setting[ga_property_profile_id]" value="<?php echo $this->settings['ga_property_profile_id']; ?>" />
 			
-			<select name="hmtp_setting[ga_property_account_id]">
+			<select name="hmtp_setting[ga_property_profile_id]">
 					
 				<option value="0">Select a property</option>
 
 				<?php 
 
 				foreach ( $props->items as $property ) {
-					printf( 
-						'<option value="%s" %s>%s</option>', 
-						$property->accountId,
-						selected( $property->accountId, $this->settings['ga_property_account_id'], false ),
-						$property->name
-					);
+
+	      			$profiles = $this->ga_service->management_profiles->listManagementProfiles( $property->accountId, $property->getId() );
+
+					printf( '<optgroup label="%s">', $property->name );
+
+	      			foreach ( $profiles->getItems() as $profile ) {
+						hm_log( $profile );
+						printf( 
+							'<option value="%s" %s>%s</option>', 
+							$profile->getId(),
+							selected( $profile->getId(), $this->settings['ga_property_profile_id'], false ),
+							$profile->name
+						);
+
+					}
+					
+					echo '</optgroup>';
+
 				}
 
 				?>
@@ -241,35 +253,6 @@ class HMTP_Admin {
 		
 		$input['allow_opt_out'] = isset( $input['allow_opt_out'] );
 		
-		if ( isset( $input['ga_property_account_id'] ) ) {
-			
-			try {			
-				
-				$properties = $this->ga_service->management_webproperties->listManagementWebproperties( $input['ga_property_account_id'] );
-				
-				if ( count( $properties->getItems() ) < 1 )
-					throw new Exception( 'Property not found' );
-
-				$input['ga_property_id'] = $properties->getItems()[0]->getId();
-				
-				// Not so sure about this...
-				$input['ga_access_token'] = json_decode( htmlspecialchars_decode( $input['ga_access_token'] ) );
-      		
-      			$profiles = $this->ga_service->management_profiles->listManagementProfiles( $input['ga_property_account_id'], $input['ga_property_id'] );
-
-      			if ( count( $profiles->getItems() ) < 0 )
-      				throw new Exception('Property not found' );
-				
-				$items = (array) $profiles->getItems();
-				$input['ga_property_profile_id'] = reset( $items )->getId();
-			
-			} catch( Exception $e ) {
-				
-				return false;
-			}
-
-		}
-
     	return $input;
 
 	}
