@@ -16,11 +16,23 @@
  */
 class HMTP_Top_Posts {
 
+	/**
+	 * @var string
+	 */
 	private $prefix = 'hmtp';
+	/**
+	 * @var int
+	 */
 	private $expiry = 86400; // $this->expiry one day.
 	
+	/**
+	 * @var array
+	 */
 	private $args = array();
 	
+	/**
+	 * @var array
+	 */
 	private $args_defaults = array(
 		'count' => 5,
 		'filter' => null, // gapi filter
@@ -31,11 +43,23 @@ class HMTP_Top_Posts {
 		'post_type' => array( 'post' ), // only supports post & page.
 	);
 
+	/**
+	 * @var Google_AnalyticsService
+	 */
 	private $analytics;
+
+ 	/**
+	 *  @varPlugin Settings
+	 */
 	private $settings;
+
+
+	/**
+	 * @var
+	 */
 	private $ga_property_profile_id;
 
-	function __construct( $settings, Google_AnalyticsService $analytics ) {
+	function __construct( $ga_property_profile_id, Google_AnalyticsService $analytics ) {
 
 		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - 2628000 );
 		$this->args_defaults['end_date']   = date( 'Y-m-d', time() );
@@ -48,15 +72,22 @@ class HMTP_Top_Posts {
 
 	}
 
-	function get_results( Array $args ) {
+	/**
+	 * Get the results
+	 *
+	 * @param array $args
+	 * @return array|mixed
+	 */
+	function get_results( Array $args = array() ) {
 
 		$args = wp_parse_args( $args, $this->args_defaults );
 
 		// Convert term names to IDs.
 		if ( ! empty( $args['terms'] ) )
-			foreach( $args['terms'] as &$term )
+			foreach ( $args['terms'] as &$term ) {
 				if ( ! is_numeric( $term ) )
 					$term = get_term_by( 'name', $term, $args['taxonomy'] )->term_id;
+			}
 
 		$this->query_id = 'hmtp_' . hash( 'md5', $this->settings['ga_property_profile_id'] . json_encode( $args ) );
 		
@@ -137,7 +168,7 @@ class HMTP_Top_Posts {
 				if ( ! empty( $args['taxonomy'] ) && ! empty( $args['terms'] ) ) {
 					$object_terms = wp_get_object_terms( $post['post_id'], $args['taxonomy'], array( 'fields' => 'ids') );
 					if ( ! count( array_intersect( $object_terms, $args['terms'] ) ) )
-						continue;
+					continue;
 				}
 
 				// Build an array of $post_id => $pageviews

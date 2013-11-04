@@ -19,17 +19,55 @@ require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
 
 HMTP_Plugin::get_instance();
 
+/**
+ * Class HMTP_Plugin
+ */
 class HMTP_Plugin {
 
+	/**
+	 * The class instance.
+	 * @var null
+	 */
 	private static $instance = null;
+
+	/**
+	 * The plugin settings.
+	 *
+	 * @var array|null
+	 */
 	private $settings = null;
+
+	/**
+	 * An instance of the Google API class
+	 *
+	 * @var Google_Client
+	 */
 	private $ga_client;
+
+	/**
+	 * An instance of the Google Analytics Service class
+	 * @var Google_AnalyticsService
+	 */
 	private $ga_service;
+
+	/**
+	 * @var HMTP_Top_Posts
+	 */
 	private $top_posts;
+
+	/**
+	 * @var A
+	 */
 	private $opt_out;
 
+	/**
+	 * @var HMTP_Admin
+	 */
 	private $admin;
 
+	/**
+	 * Initialization
+	 */
 	private function __construct() {
 
 		$this->settings = wp_parse_args( 
@@ -45,7 +83,7 @@ class HMTP_Plugin {
 				'allow_opt_out'          => false,
 				'lookup_method'          => false,
 				'do_cron'                => false
-			)
+			) 
 		);
 
 		$this->token = get_option( 'hmtp_ga_token' );
@@ -111,16 +149,24 @@ class HMTP_Plugin {
 			$this->ga_client->authenticate();
 			update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
 			
-			wp_safe_redirect( add_query_arg( 
+			wp_safe_redirect(
+				add_query_arg(
 				array( 'page' => 'hmtp_settings_page' ), 
 				get_admin_url() . 'options-general.php'
-			) );
+				)
+			);
 
 			exit;
 		}
 
 	}
 
+	/**
+	 * Fetch the top posts
+	 *
+	 * @param array $args
+	 * @return array|mixed
+	 */
 	public function get_results( Array $args = array() ) {
 
 		if ( ! $this->top_posts )
