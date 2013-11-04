@@ -73,8 +73,8 @@ class HMTP_Plugin {
 		$this->settings = wp_parse_args( 
 			get_option( 'hmtp_setting', array() ), 
 			array(
-				'ga_property_id'         => null,
-				'ga_property_account_id' => null,
+				// 'ga_property_id'         => null,
+				// 'ga_property_account_id' => null,
 				'ga_property_profile_id' => null,
 				'ga_client_id'           => null,
 				'ga_client_secret'       => null,
