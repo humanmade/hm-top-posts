@@ -11,7 +11,7 @@ class HMTP_Admin {
 	 * @var object
 	 */
 	protected static $_instance = null;
-	
+
 	/**
 	 * @var Google_Client|null
 	 */
@@ -40,9 +40,9 @@ class HMTP_Admin {
 	 * @param Google_AnalyticsService $ga_analytics
 	 */
 	public function __construct( $settings = array(), Google_Client $ga_client, Google_AnalyticsService $ga_analytics ) {
-		
-		$this->settings = $settings;
-		$this->ga_client = $ga_client;
+
+		$this->settings   = $settings;
+		$this->ga_client  = $ga_client;
 		$this->ga_service = $ga_analytics;
 
 		add_action( 'init', array( $this, 'init' ) );
@@ -57,7 +57,7 @@ class HMTP_Admin {
 	/**
 	 * Should not be able to clone singletons
 	 */
-	final private function __clone(){}
+	final private function __clone() {}
 
 	/**
 	 * Initiate authorization
@@ -66,14 +66,14 @@ class HMTP_Admin {
 
 		// Deauthenticate.
 		if ( isset( $_GET['hmtp_deauth'] ) && wp_verify_nonce( $_GET['hmtp_deauth'], 'hmtp_deauth' ) ) {
-			
+
 			delete_option( 'hmtp_setting' );
 			delete_option( 'hmtp_ga_token' );
-			
+
 			wp_safe_redirect(
 				add_query_arg(
-				array( 'page' => 'hmtp_settings_page' ), 
-				get_admin_url() . 'options-general.php'
+					array( 'page' => 'hmtp_settings_page' ),
+					get_admin_url() . 'options-general.php'
 				)
 			);
 
@@ -87,9 +87,9 @@ class HMTP_Admin {
 	 */
 	function admin_init() {
 
-		register_setting( 
-			'hmtp_settings', 
-			'hmtp_setting', 
+		register_setting(
+			'hmtp_settings',
+			'hmtp_setting',
 			array( $this, 'hmtp_settings_sanitize' )
 		);
 
@@ -150,6 +150,13 @@ class HMTP_Admin {
 
 	}
 
+
+	public function admin_menu() {
+
+		add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
+	
+	}
+
 	/**
 	 * Output the plugin settings page
 	 */
@@ -157,12 +164,12 @@ class HMTP_Admin {
 	
 	?>
 
-        <form action="options.php" method="POST">
-			
+		<form action="options.php" method="POST">
+
 			<?php
 
-			settings_fields('hmtp_settings');	
-			do_settings_sections('hmtp_settings_page');
+			settings_fields( 'hmtp_settings' );
+			do_settings_sections( 'hmtp_settings_page' );
 			submit_button();
 
 			?>
@@ -170,14 +177,14 @@ class HMTP_Admin {
 		</form>
 
 		<?php
-		
+
 		// Demo.
 		$results = hmtp_get_top_posts( array() );
-		
+
 		?>
-		
+
 		<h4>Top Posts</h4>
-		
+
 		<?php if ( $results ) : ?>
 			<ul>
 				<?php foreach ( $results as $post ) : ?>
@@ -205,31 +212,31 @@ class HMTP_Admin {
 	 * Display the client ID field
 	 */
 	public function hmtp_settings_field_client_id_display() { ?>
-		<input type="text" name="hmtp_setting[ga_client_id]"     value="<?php echo esc_attr( $this->settings['ga_client_id'] ); ?>"/>
+		<input type="text" name="hmtp_setting[ga_client_id]" value="<?php echo esc_attr( $this->settings['ga_client_id'] ); ?>" />
 	<?php
 	}
-	
+
 	/**
 	 * Display the client secret field
 	 */
 	public function hmtp_settings_field_client_secret_display() { ?>
-		<input type="text" name="hmtp_setting[ga_client_secret]" value="<?php echo esc_attr( $this->settings['ga_client_secret'] ); ?>"/>
+		<input type="text" name="hmtp_setting[ga_client_secret]" value="<?php echo esc_attr( $this->settings['ga_client_secret'] ); ?>" />
 	<?php
 	}
-	
+
 	/**
 	 * Display the client API key field
 	 */
 	public function hmtp_settings_field_api_key_display() { ?>
-		<input type="text" name="hmtp_setting[ga_api_key]"       value="<?php echo esc_attr( $this->settings['ga_api_key'] ); ?>"/>
+		<input type="text" name="hmtp_setting[ga_api_key]" value="<?php echo esc_attr( $this->settings['ga_api_key'] ); ?>" />
 	<?php
 	}
-	
+
 	/**
 	 * Display the redirect URL field
 	 */
 	public function hmtp_settings_field_redirect_display() { ?>
-		<input type="text" name="hmtp_setting[ga_redirect_url]"  value="<?php echo esc_attr( $this->settings['ga_redirect_url'] ); ?>"/>
+		<input type="text" name="hmtp_setting[ga_redirect_url]" value="<?php echo esc_attr( $this->settings['ga_redirect_url'] ); ?>" />
 	<?php
 	}
 
@@ -241,20 +248,20 @@ class HMTP_Admin {
 		// Do not show the authenticate button or inputs if api details have not been added.
 		if ( ! $this->settings['ga_client_id'] || ! $this->settings['ga_client_secret'] || ! $this->settings['ga_api_key'] || ! $this->settings['ga_redirect_url'] )
 			return;
-		
+
 		// Show authenticate button only. 
 		if ( ! $this->ga_client->getAccessToken() ) :
-		
-			printf( 
-				'<p><a class="button" href="%s">Authenticate with Google</a></p>', 
+
+			printf(
+				'<p><a class="button" href="%s">Authenticate with Google</a></p>',
 				esc_url( $this->ga_client->createAuthUrl() )
 			);
 
 		// If authenticated & api details are provided, show the property select field.
 		else :
 
-			$props = $this->ga_service->management_webproperties->listManagementWebproperties("~all");
-			
+			$props = $this->ga_service->management_webproperties->listManagementWebproperties( "~all" );
+
 			$deauth_url = wp_nonce_url( add_query_arg( array() ), 'hmtp_deauth', 'hmtp_deauth' );
 
 			?>
@@ -262,12 +269,12 @@ class HMTP_Admin {
 			<input type="hidden" name="hmtp_setting[ga_property_id]" value="<?php echo esc_attr( $this->settings['ga_property_id'] ); ?>" />
 			<input type="hidden" name="hmtp_setting[ga_access_token]" value="<?php echo esc_attr( json_encode( $this->settings['ga_access_token'] ) ); ?>" />
 			<input type="hidden" name="hmtp_setting[ga_property_profile_id]" value="<?php echo esc_attr( $this->settings['ga_property_profile_id'] ); ?>" />
-			
+
 			<select name="hmtp_setting[ga_property_profile_id]">
-					
+
 				<option value="0">Select a property</option>
 
-				<?php 
+				<?php
 
 				foreach ( $props->items as $property ) {
 
@@ -277,8 +284,8 @@ class HMTP_Admin {
 
 	      			foreach ( $profiles->getItems() as $profile ) {
 
-					printf( 
-						'<option value="%s" %s>%s</option>', 
+					printf(
+						'<option value="%s" %s>%s</option>',
 							$profile->getId(),
 							selected( $profile->getId(), $this->settings['ga_property_profile_id'], false ),
 							$profile->name
@@ -293,7 +300,7 @@ class HMTP_Admin {
 				?>
 
 			</select>
-			
+
 		<?php
 
 		endif;
@@ -313,15 +320,15 @@ class HMTP_Admin {
 
 	/**
 	 * Filter the user input
-	 * 
+	 *
 	 * @param $input
 	 * @return bool
 	 */
 	public function hmtp_settings_sanitize( $input ) {
-		
+
 		$input['allow_opt_out'] = isset( $input['allow_opt_out'] );
-		
-    	return $input;
+
+		return $input;
 
 	}
 
