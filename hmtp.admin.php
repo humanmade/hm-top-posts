@@ -192,6 +192,8 @@ class HMTP_Admin {
 		</form>
 
 		<?php
+			
+		// return;
 		
 		// Demo.
 		$results = hmtp_get_top_posts( array() );
@@ -336,7 +338,7 @@ class HMTP_Admin {
 	}
 
 	public function hmtp_settings_field_no_url_to_postid_display() { ?>
-		<label><input type="checkbox" name="hmtp_setting[no_url_to_postid]"  <?php checked( true, $this->settings['no_url_to_postid'] ); ?>/> Single post lookup query. More performant, but less robust. Requires that post-name is included in url.</label>
+		<label><input type="checkbox" name="hmtp_setting[no_url_to_postid]"  <?php checked( true, $this->settings['no_url_to_postid'] ); ?>/> Single post lookup query. More performant, but less robust. Requires that post-name is the last part of the URL. Can return erroneous results if a post has the same name as a non-post page (eg taxonomy archive)</label>
 	<?php }
 
 	public function hmtp_settings_field_do_cron_display() { ?>
@@ -359,40 +361,13 @@ class HMTP_Admin {
 		$r['ga_redirect_url']  = $input['ga_redirect_url'];
 		
 		$r['allow_opt_out']          = isset( $input['allow_opt_out'] );
-		$r['ga_property_account_id'] = $input['ga_property_account_id'];
+		// $r['ga_property_account_id'] = $input['ga_property_account_id'];
+		$r['ga_property_profile_id'] = $input['ga_property_profile_id'];
 		
 		$r['allow_opt_out'] = isset( $input['allow_opt_out'] );
 		$r['no_url_to_postid'] = isset( $input['no_url_to_postid'] );
 		$r['do_cron']       = isset( $input['do_cron'] );
 
-		if ( ! empty( $input['ga_property_account_id'] ) ) {
-			
-			try {			
-				
-				$properties = $this->ga_service->management_webproperties->listManagementWebproperties( $input['ga_property_account_id'] );
-				
-				if ( count( $properties->getItems() ) < 1 )
-					throw new Exception( 'Property not found' );
-
-				$r['ga_property_id'] = $properties->getItems()[0]->getId();
-      		
-      			$profiles = $this->ga_service->management_profiles->listManagementProfiles( $input['ga_property_account_id'], $input['ga_property_id'] );
-
-      			if ( count( $profiles->getItems() ) < 0 )
-      				throw new Exception('Property not found' );
-				
-				$items = (array) $profiles->getItems();
-				$r['ga_property_profile_id'] = reset( $items )->getId();
-			
-			} catch( Exception $e ) {
-				hm_log( $e );
-				return $r;
-			}
-				
-				return false;
-			}
-
-		hm_log( $r );
 
     	return $r;
 

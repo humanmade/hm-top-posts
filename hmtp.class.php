@@ -49,17 +49,11 @@ class HMTP_Top_Posts {
 	private $analytics;
 
  	/**
-	 *  @varPlugin Settings
+	 *  @var Plugin Settings
 	 */
 	private $settings;
 
-
-	/**
-	 * @var
-	 */
-	private $ga_property_profile_id;
-
-	function __construct( $ga_property_profile_id, Google_AnalyticsService $analytics ) {
+	function __construct( $settings, Google_AnalyticsService $analytics ) {
 
 		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - 2628000 );
 		$this->args_defaults['end_date']   = date( 'Y-m-d', time() );
@@ -154,6 +148,8 @@ class HMTP_Top_Posts {
 
 			$posts = $this->get_posts_from_results( $results->getRows(), $args );
 
+			usort( $posts, array( $this, 'posts_sort' ) );
+
 			foreach ( $posts as $post  ) {
 
 				// Check the post type is one of the ones we want.
@@ -174,7 +170,7 @@ class HMTP_Top_Posts {
 				// Build an array of $post_id => $pageviews
 				$top_posts[$post['post_id']] = array(
 					'post_id' => $post['post_id'],
-					'views'   => $result[1],
+					'views'   => $post['views'],
 				);
 
 				// Once we have enough posts we can break out of this.
@@ -186,7 +182,7 @@ class HMTP_Top_Posts {
 			$start_index += $max_results;
 
 		}
-
+		
 		return $top_posts;
 
 	}
@@ -201,36 +197,61 @@ class HMTP_Top_Posts {
 	 */
 	function get_posts_from_results( $results, $args ) {
 		
-		$posts = array();
+		$post_names = array();
 
 		if ( $this->settings['no_url_to_postid'] ) {
 
-			$post_names = array();
-
 			foreach ( $results as &$result  ) {
+			
+				$url = apply_filters( 'hmtp_result_url', (string) $result[0] );
+				$url = str_replace( 'index.htm', '', $url );
+				$url = trim( $url, '/' );
+				$url = preg_replace( '/[\?|\#].*/', '', $url ); // strip query args and hashes.
 				
-				$url = apply_filters( 'hmtp_result_url', (string) $result );
-				$url = esc_sql( sanitize_text_field( end( explode( '/', untrailingslashit( reset( explode( '?',  $url ) ) ) ) ) ) );
+				$url = end( explode( '/', $url ) );
 
-				if ( $url )
-					$result['post-name'] = ( empty( $post_names[$url] ) ) ? $result->getPageviews() : $post_names[$url] + $result->getPageviews();
+				if ( ! empty( $url ) ) {
+					$post_names[$url] = array( 
+						'post-name' => $url,
+						'views'     => $result[1]
+					);
+				}
 			
 			}
 
-			$post_names = array_map( function( $result ) { return $result['post-name'] }, $results );
-
 			global $wpdb;
 
-			// @todo prepare.
-			$posts = $wpdb->get_results( "SELECT ID, post_name FROM wp_posts WHERE post_name IN ( '". implode( '\', \'', array_keys( $post_names ) ) . "' ) ");
+			// Sanitize.
+			$names = implode( ',', array_map( function( $val ) { global $wpdb; return $wpdb->prepare('%s', $val ); }, $post_names ) );
+			
+			$query_results = $wpdb->get_results( 
+				"SELECT ID, post_name FROM $wpdb->posts WHERE post_name IN ( $names ) AND post_status = 'publish' "
+			);
+
+			$posts = array();
+			foreach ( $query_results as $query_result ) {	
+
+				if ( array_key_exists( $query_result->post_name, $post_names ) )
+					$views = $post_names[$query_result->post_name]['views'];
+				else
+					$views = 0;
+				
+				$posts[ intval( $query_result->ID ) ] = array( 'post_id' => $query_result->ID, 'views' => $views );
+
+			}
 
 		} else {
 
 			foreach ( $results as $result  ) {
-					
+				
+				$url = apply_filters( 'hmtp_result_url', (string) $result[0] );
+				$url = str_replace( 'index.htm', '', $url );
+				$url = trim( $url, '/' );
+				$url = preg_replace( '/[\?|\#].*/', '', $url );
+
 				// Get the post id from the url
 				// Does not work for custom post types.
-				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );
+				$post_id = url_to_postid( $url );
 
 				if ( $post_id )
 					$posts[$post_id] = array( 'post_id' => $post_id, 'views' => $result[1] );
@@ -240,6 +261,19 @@ class HMTP_Top_Posts {
 		}
 
 		return $posts;
+
+	}
+
+	public function posts_sort($a, $b) {
+    	
+    	$a = intval($a['views']);
+    	$b = intval($b['views']);
+    
+    	if ( $a === $b ) {
+     		return 0;
+     	}
+     	
+     	return ( $a < $b ) ? 1 : -1;
 
 	}
 
