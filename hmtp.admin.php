@@ -47,7 +47,6 @@ class HMTP_Admin {
 
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
-
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 
 	}
@@ -168,12 +167,6 @@ class HMTP_Admin {
 			'hmtp_settings_section'
 		);
 
-	}
-
-	public function admin_menu() {
-
-		add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
-	
 	}
 
 	/**
