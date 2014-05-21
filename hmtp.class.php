@@ -177,6 +177,12 @@ class HMTP_Top_Posts {
 				if ( ! is_null( $args['taxonomy'] ) && ! empty( $args['terms'] ) && 0 == count( array_intersect( wp_get_object_terms( $post_id, $args['taxonomy'], array( 'fields' => 'ids' ) ), $args['terms'] ) ) )
 					continue;
 
+				if ( ! empty( $args['filter_callback'] ) ) {
+					if ( ! call_user_func( $args['filter_callback'], $post_id, $result ) ) {
+						continue;
+					}
+				}
+
 				// Build an array of $post_id => $pageviews
 				$top_posts[$post_id] = array(
 					'post_id' => $post_id,
