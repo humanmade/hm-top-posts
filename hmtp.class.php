@@ -211,10 +211,6 @@ class HMTP_Top_Posts {
 	 */
 	private function url_to_postid( $url ) {
 
-		// Sanity check; no URLs not from this site
-		if ( parse_url( $url, PHP_URL_HOST ) != parse_url( home_url(), PHP_URL_HOST ) )
-			return false;
-
 		$cache_key = md5( $url );
 		$post_id = wp_cache_get( $cache_key, 'url_to_postid' );
 
