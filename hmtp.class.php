@@ -165,20 +165,27 @@ class HMTP_Top_Posts {
 					$post_id = get_option( 'page_on_front' );
 				}
 
-				// Does this top url even relate to a post at all?
-				// If your permalink structure clashes with page/category/tag structure it just might.
+				// If post for given URL can't be found - skip.
+				// This will be the case for most archives.
 				if ( ! $post_id )
 					continue;
 
-				// This can get confusing if we don't pass explicit post types. Who knows what GA will come up with.
-				if ( ! in_array( get_post_type( $post_id ), $args['post_type'] ) )
+				// GA will return all URL results - try and filter by post type.
+				// Note that it would be far more efficient to filter GA results by using the permalink for the post type.
+				// You can pass this as an arg.
+				if ( ! in_array( get_post_type( $post_id ), (array) $args['post_type'] ) && 'any' !== $args['post_type'] )
 					continue;
 
+				// Skip manually hidden.
 				if ( get_post_meta( $post_id, 'hmtp_top_posts_optout', true ) )
 					continue;
 
-				// // If taxonomy and terms supplied - check if theyre is any intersect between those terms and the post terms.
-				if ( ! is_null( $args['taxonomy'] ) && ! empty( $args['terms'] ) && 0 == count( array_intersect( wp_get_object_terms( $post_id, $args['taxonomy'], array( 'fields' => 'ids' ) ), $args['terms'] ) ) )
+				// If results should be restricted by taxonomy/terms supplied
+				if (
+					! is_null( $args['taxonomy'] ) &&
+					! empty( $args['terms'] ) &&
+					0 == count( array_intersect( wp_get_object_terms( $post_id, $args['taxonomy'], array( 'fields' => 'ids' ) ), $args['terms'] ) )
+				)
 					continue;
 
 				if ( ! empty( $args['filter_callback'] ) ) {
@@ -193,7 +200,7 @@ class HMTP_Top_Posts {
 					'views'   => $result[1],
 				);
 
-				// Once we have enough posts we can break out of this.
+				// break when we have enough posts.
 				if ( isset( $top_posts ) && count( $top_posts ) >= $args['count'] )
 					break;
 
