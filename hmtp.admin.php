@@ -100,37 +100,36 @@ class HMTP_Admin {
 			'hmtp_settings_page'
 		);
 
-		add_settings_field(
-			'hmtp_settings_client_id',
-			'Client ID',
-			array( $this, 'hmtp_settings_field_client_id_display' ),
-			'hmtp_settings_page',
-			'hmtp_settings_section'
-		);
+		if ( ! ( defined( 'HMTP_GA_CLIENT_ID' ) && HMTP_GA_CLIENT_ID ) ) {
+			add_settings_field(
+				'hmtp_settings_client_id',
+				'Client ID',
+				array( $this, 'hmtp_settings_field_client_id_display' ),
+				'hmtp_settings_page',
+				'hmtp_settings_section'
+			);
+		}
 
-		add_settings_field(
-			'hmtp_settings_client_secret',
-			'Client Secret',
-			array( $this, 'hmtp_settings_field_client_secret_display' ),
-			'hmtp_settings_page',
-			'hmtp_settings_section'
-		);
+		if ( ! ( defined( 'HMTP_GA_CLIENT_SECRET' ) && HMTP_GA_CLIENT_SECRET ) ) {
+			add_settings_field(
+				'hmtp_settings_client_secret',
+				'Client Secret',
+				array( $this, 'hmtp_settings_field_client_secret_display' ),
+				'hmtp_settings_page',
+				'hmtp_settings_section'
+			);
 
-		// add_settings_field(
-		// 	'hmtp_settings_api_key',
-		// 	'API Key',
-		// 	array( $this, 'hmtp_settings_field_api_key_display' ),
-		// 	'hmtp_settings_page',
-		// 	'hmtp_settings_section'
-		// );
+		}
 
-		add_settings_field(
-			'hmtp_settings_redirect_url',
-			'Redirect URL',
-			array( $this, 'hmtp_settings_field_redirect_display' ),
-			'hmtp_settings_page',
-			'hmtp_settings_section'
-		);
+		if ( ! ( defined( 'HMTP_GA_REDIRECT_URL' ) && HMTP_GA_REDIRECT_URL ) ) {
+			add_settings_field(
+				'hmtp_settings_redirect_url',
+				'Redirect URL',
+				array( $this, 'hmtp_settings_field_redirect_display' ),
+				'hmtp_settings_page',
+				'hmtp_settings_section'
+			);
+		}
 
 		add_settings_field(
 			'hmtp_settings_property',
@@ -221,14 +220,6 @@ class HMTP_Admin {
 	 */
 	public function hmtp_settings_field_client_secret_display() { ?>
 		<input type="text" name="hmtp_setting[ga_client_secret]" value="<?php echo esc_attr( $this->settings['ga_client_secret'] ); ?>" />
-	<?php
-	}
-
-	/**
-	 * Display the client API key field
-	 */
-	public function hmtp_settings_field_api_key_display() { ?>
-		<input type="text" name="hmtp_setting[ga_api_key]" value="<?php echo esc_attr( $this->settings['ga_api_key'] ); ?>" />
 	<?php
 	}
 
