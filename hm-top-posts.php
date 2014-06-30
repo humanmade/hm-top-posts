@@ -81,11 +81,22 @@ class HMTP_Plugin {
 				'ga_property_profile_id' => null,
 				'ga_client_id'           => null,
 				'ga_client_secret'       => null,
-				'ga_api_key'             => null,
 				'ga_redirect_url'        => null,
 				'allow_opt_out'          => false,
 			)
 		);
+
+		if ( defined( HMTP_GA_CLIENT_ID ) && HMTP_GA_CLIENT_ID ) {
+			$this->settings['ga_client_id'] = HMTP_GA_CLIENT_ID;
+		}
+
+		if ( defined( HMTP_GA_CLIENT_SECRET ) && HMTP_GA_CLIENT_SECRET ) {
+			$this->settings['ga_client_secret'] = HMTP_GA_CLIENT_SECRET;
+		}
+
+		if ( defined( HMTP_GA_REDIRECT_URL ) && HMTP_GA_REDIRECT_URL ) {
+			$this->settings['ga_redirect_url'] = HMTP_GA_REDIRECT_URL;
+		}
 
 		$this->token = get_option( 'hmtp_ga_token' );
 
@@ -97,7 +108,6 @@ class HMTP_Plugin {
 		// client id, client secret, and to register your redirect uri.
 		$this->ga_client->setClientId( $this->settings['ga_client_id'] );
 		$this->ga_client->setClientSecret( $this->settings['ga_client_secret'] );
-		$this->ga_client->setDeveloperKey( $this->settings['ga_api_key'] );
 		$this->ga_client->setRedirectUri( $this->settings['ga_redirect_url'] );
 		$this->ga_client->setUseObjects( true );
 
