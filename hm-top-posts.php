@@ -169,12 +169,7 @@ class HMTP_Plugin {
 	 * @return array|mixed
 	 */
 	public function get_results( Array $args = array() ) {
-
-		if ( ! $this->top_posts )
-			return array();
-
 		return $this->top_posts->get_results( $args );
-
 	}
 
 }

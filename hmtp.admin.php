@@ -186,11 +186,11 @@ class HMTP_Admin {
 		<h4>Top Posts</h4>
 
 		<?php if ( $results ) : ?>
-			<ul>
+			<ol>
 				<?php foreach ( $results as $post ) : ?>
-					<li><?php printf( '%s (%d)', get_the_title( $post['post_id'] ), $post['views'] ); ?></li>
+					<li><?php printf( '<a href="%s">%s (%d)</a>', esc_url( get_permalink( $post['post_id'] ) ), esc_html( get_the_title( $post['post_id'] ) ), absint( $post['views'] ) ); ?></li>
 				<?php endforeach; ?>
-			</ul>
+			</ol>
 		<?php else : ?>
 			<p>No posts found</p>
 		<?php endif;

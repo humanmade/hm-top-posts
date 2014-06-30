@@ -159,7 +159,7 @@ class HMTP_Top_Posts {
 
 				// Get the post id from the url
 				// Does not work for custom post types.
-				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );
+				$post_id = $this->url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );
 
 				// Does this top url even relate to a post at all?
 				// If your permalink structure clashes with page/category/tag structure it just might.
@@ -200,6 +200,33 @@ class HMTP_Top_Posts {
 		}
 
 		return $top_posts;
+
+	}
+
+	/**
+	 * Cached version of url_to_postid, which can be expensive.
+	 *
+	 * Taken from wpcom_vip_url_to_postid
+	 * Examine a url and try to determine the post ID it represents.
+	 *
+	 * @param string $url Permalink to check.
+	 * @return int Post ID, or 0 on failure.
+	 */
+	private function url_to_postid( $url ) {
+
+		// Sanity check; no URLs not from this site
+		if ( parse_url( $url, PHP_URL_HOST ) != parse_url( home_url(), PHP_URL_HOST ) )
+			return false;
+
+		$cache_key = md5( $url );
+		$post_id = wp_cache_get( $cache_key, 'url_to_postid' );
+
+		if ( false === $post_id ) {
+			$post_id = url_to_postid( $url ); // returns 0 on failure, so need to catch the false condition
+			wp_cache_add( $cache_key, $post_id, 'url_to_postid' );
+		}
+
+		return $post_id;
 
 	}
 
