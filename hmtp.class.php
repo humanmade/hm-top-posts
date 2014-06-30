@@ -88,13 +88,10 @@ class HMTP_Top_Posts {
 
 		// If TLC Transients exists, use that.
 		if ( class_exists( 'TLC_Transient' ) ) {
-			$results = tlc_transient( $this->query_id )->expires_in( $this->expiry )->background_only()->updates_with( array( $this, 'fetch_results' ), array( $args ) )->get();
 
-			return $results;
+			return tlc_transient( $this->query_id )->expires_in( $this->expiry )->background_only()->updates_with( array( $this, 'fetch_results' ), array( $args ) )->get();
 
-			// Fall back to boring old normal transients.
-		}
-		else {
+		} else {
 
 			if ( $results = get_transient( $this->query_id ) )
 				return $results;
@@ -147,12 +144,9 @@ class HMTP_Top_Posts {
 					'ga:pageviews',
 					$opt_params
 				);
-
 			} catch ( Exception $e ) {
-
 				update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
 				return;
-
 			}
 
 			if ( count( $results->getRows() ) < 1 )
