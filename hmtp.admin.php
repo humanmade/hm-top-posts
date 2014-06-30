@@ -116,13 +116,13 @@ class HMTP_Admin {
 			'hmtp_settings_section'
 		);
 
-		add_settings_field(
-			'hmtp_settings_api_key',
-			'API Key',
-			array( $this, 'hmtp_settings_field_api_key_display' ),
-			'hmtp_settings_page',
-			'hmtp_settings_section'
-		);
+		// add_settings_field(
+		// 	'hmtp_settings_api_key',
+		// 	'API Key',
+		// 	array( $this, 'hmtp_settings_field_api_key_display' ),
+		// 	'hmtp_settings_page',
+		// 	'hmtp_settings_section'
+		// );
 
 		add_settings_field(
 			'hmtp_settings_redirect_url',
@@ -154,14 +154,14 @@ class HMTP_Admin {
 	public function admin_menu() {
 
 		add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
-	
+
 	}
 
 	/**
 	 * Output the plugin settings page
 	 */
-	public function settings_page() { 
-	
+	public function settings_page() {
+
 	?>
 
 		<form action="options.php" method="POST">
@@ -246,10 +246,10 @@ class HMTP_Admin {
 	public function hmtp_settings_field_property_display() {
 
 		// Do not show the authenticate button or inputs if api details have not been added.
-		if ( ! $this->settings['ga_client_id'] || ! $this->settings['ga_client_secret'] || ! $this->settings['ga_api_key'] || ! $this->settings['ga_redirect_url'] )
+		if ( ! $this->settings['ga_client_id'] || ! $this->settings['ga_client_secret'] || ! $this->settings['ga_redirect_url'] )
 			return;
 
-		// Show authenticate button only. 
+		// Show authenticate button only.
 		if ( ! $this->ga_client->getAccessToken() ) :
 
 			printf(
@@ -292,7 +292,7 @@ class HMTP_Admin {
 					);
 
 					}
-					
+
 					echo '</optgroup>';
 
 				}
@@ -312,7 +312,7 @@ class HMTP_Admin {
 	 */
 	public function hmtp_settings_field_opt_out_display() { ?>
 		<label>
-			<input type="checkbox" name="hmtp_setting[allow_opt_out]"  <?php checked( true, $this->settings['allow_opt_out'] ); ?>/> 
+			<input type="checkbox" name="hmtp_setting[allow_opt_out]"  <?php checked( true, $this->settings['allow_opt_out'] ); ?>/>
 			Allow excluding individual posts from Top Posts results.
 		</label>
 	<?php
