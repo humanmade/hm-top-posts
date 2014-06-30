@@ -40,6 +40,7 @@ class HMTP_Top_Posts {
 		'start_date' => null, // format YYYY-mm-dd. 1 month ago.
 		'end_date'   => null, // format YYYY-mm-dd
 		'post_type'  => array( 'post' ), // only supports post & page.
+		'filters'    => null, // see https://developers.google.com/analytics/devguides/reporting/core/v3/reference#filters
 	);
 
 	/**
@@ -63,9 +64,6 @@ class HMTP_Top_Posts {
 
 		$this->ga_property_profile_id = $ga_property_profile_id;
 		$this->analytics              = $analytics;
-
-		// If too many results - can filter results using permalink structure.
-		// 'pagePath =~ ^' . str_replace( '/%postname%', '', get_option('permalink_structure') ) . '.*'
 
 	}
 
@@ -128,21 +126,26 @@ class HMTP_Top_Posts {
 		$top_posts   = array();
 		$start_index = 1;
 
+		$opt_params = array(
+			'dimensions'  => 'ga:pagePath',
+			'sort'        => '-ga:pageviews',
+			'max-results' => $max_results,
+			'start-index' => $start_index,
+		);
+
+		if ( ! empty( $this->args['filters'] ) ) {
+			$this->opt_params['filters'] = $this->args['filters'];
+		}
+
 		while ( count( $top_posts ) < $args['count'] ) {
 
 			try {
-
 				$results = $this->analytics->data_ga->get(
 					'ga:' . $this->ga_property_profile_id,
 					$args['start_date'],
 					$args['end_date'],
 					'ga:pageviews',
-					array(
-						'dimensions'  => 'ga:pagePath',
-						'sort'        => '-ga:pageviews',
-						'max-results' => $max_results,
-						'start-index' => $start_index
-					)
+					$opt_params
 				);
 
 			} catch ( Exception $e ) {
