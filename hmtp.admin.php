@@ -178,7 +178,7 @@ class HMTP_Admin {
 		<?php
 
 		// Demo.
-		$results = hmtp_get_top_posts( array() );
+		$results = hmtp_get_top_posts( array( 'post_type' => 'any' ) );
 
 		?>
 

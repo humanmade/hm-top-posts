@@ -154,9 +154,16 @@ class HMTP_Top_Posts {
 
 			foreach ( $results->getRows() as $result ) {
 
+				$url = str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) );
+
 				// Get the post id from the url
 				// Does not work for custom post types.
-				$post_id = $this->url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) ) );
+				$post_id = $this->url_to_postid( $url );
+
+				// Handle having a page as the home page when queriying for pages.
+				if ( '/' === $url && 'page' === get_option( 'show_on_front' ) ) {
+					$post_id = get_option( 'page_on_front' );
+				}
 
 				// Does this top url even relate to a post at all?
 				// If your permalink structure clashes with page/category/tag structure it just might.
