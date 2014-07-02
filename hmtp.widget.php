@@ -36,6 +36,8 @@ class HMTP_Widget extends WP_Widget {
 			echo $args['after_title'];
 		}
 
+		ob_start();
+
 		?>
 
 		<ol class="hmtp-widget">
@@ -49,6 +51,8 @@ class HMTP_Widget extends WP_Widget {
 		</ol>
 
 		<?php
+
+		echo apply_filters( 'hmtp-widget-output', ob_get_clean(), $results );
 
 		echo $args['after_widget'];
 
