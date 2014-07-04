@@ -86,15 +86,15 @@ class HMTP_Plugin {
 			)
 		);
 
-		if ( defined( HMTP_GA_CLIENT_ID ) && HMTP_GA_CLIENT_ID ) {
+		if ( defined( 'HMTP_GA_CLIENT_ID' ) && HMTP_GA_CLIENT_ID ) {
 			$this->settings['ga_client_id'] = HMTP_GA_CLIENT_ID;
 		}
 
-		if ( defined( HMTP_GA_CLIENT_SECRET ) && HMTP_GA_CLIENT_SECRET ) {
+		if ( defined( 'HMTP_GA_CLIENT_SECRET' ) && HMTP_GA_CLIENT_SECRET ) {
 			$this->settings['ga_client_secret'] = HMTP_GA_CLIENT_SECRET;
 		}
 
-		if ( defined( HMTP_GA_REDIRECT_URL ) && HMTP_GA_REDIRECT_URL ) {
+		if ( defined( 'HMTP_GA_REDIRECT_URL' ) && HMTP_GA_REDIRECT_URL ) {
 			$this->settings['ga_redirect_url'] = HMTP_GA_REDIRECT_URL;
 		}
 
