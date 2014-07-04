@@ -47,11 +47,12 @@ class HMTP_Admin {
 
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
+		add_action( 'admin_menu', array( $this, 'add_options_pages' ) );
 
-		add_action( 'admin_menu', function () {
-			add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
-		} );
+	}
 
+	function add_options_pages() {
+		add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
 	}
 
 	/**
