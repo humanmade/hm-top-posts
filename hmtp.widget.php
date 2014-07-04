@@ -68,7 +68,7 @@ class HMTP_Widget extends WP_Widget {
 	 */
  	public function form( $instance ) {
 
- 		$title = isset( $instance[ 'title' ] ) ? $instance[ 'title' ] : 'Hive Post Authors';
+ 		$title = isset( $instance[ 'title' ] ) ? $instance[ 'title' ] : 'Most Popular';
 
  		$args = wp_parse_args(
  			(array) $instance['args'],
@@ -112,7 +112,7 @@ class HMTP_Widget extends WP_Widget {
 		</p>
 
 		<p>
-			<label for="<?php echo $this->get_field_id( 'title' ); ?>">Title</label>
+			<label for="<?php echo $this->get_field_id( 'title' ); ?>">Tags</label>
 			<input class="widefat" type="text" id="<?php echo $this->get_field_id( 'args' ); ?>-terms" name="<?php echo $this->get_field_name( 'args' ); ?>[terms]" value="<?php echo esc_attr( implode( ', ', $args['terms'] ) ); ?>" />
 			<small>Comma separated list of terms</small>
 		</p>
