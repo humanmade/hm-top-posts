@@ -53,13 +53,14 @@ add_action('admin_notices', 'hmtp_top_posts_error_messaages');
 
 add_action( 'init', function() {
 
-	if ( wp_next_scheduled( 'hmtp_update_post_view_count' ) )
+	if ( wp_next_scheduled( 'hmtp_update_post_view_count_midnight' ) )
 		return;
 
-	//todo: set time of day with low traffic
-	wp_schedule_event( time(), 'daily', 'hmtp_update_post_view_count' );
-} );
+	wp_schedule_event( strtotime( 'tomorrow' ), 'daily', 'hmtp_update_post_view_count_midnight' );
 
+	//unschedule legacy event
+	wp_unschedule_event( wp_next_scheduled( 'hmtp_update_post_view_count' ), 'hmtp_update_post_view_count' );
+} );
 
 add_action( 'hmtp_update_post_view_count', function() {
 
