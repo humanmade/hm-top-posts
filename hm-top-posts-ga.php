@@ -144,7 +144,7 @@ class HMTP_Top_Posts {
 		try {
 			$ga = new gapi( $this->username, $this->password );
 		} catch( Exception $e ) {
-			hm_log( $e );
+			trigger_error( $e->getMessage(), E_USER_WARNING );
 			update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
 			return;
 		}
@@ -170,7 +170,7 @@ class HMTP_Top_Posts {
 			try {
 				$ga->requestReportData( $this->profile_id, $dimensions, $metrics, '-pageviews', null, $start_date, $end_date, $start_index, $results_per_loop );
 			} catch( Exception $e ) {
-				hm_log( $e );
+				trigger_error( $e->getMessage(), E_USER_WARNING );
 				update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
 				return;
 			}
