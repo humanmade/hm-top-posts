@@ -206,7 +206,7 @@ class HMTP_Top_Posts {
 
 			}
 
-			$start_index += $max_results;
+			$opt_params['start-index'] += $max_results;
 
 		}
 
