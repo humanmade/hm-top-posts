@@ -156,6 +156,9 @@ class HMTP_Top_Posts {
 
 				$url = str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) );
 
+				// URls are relative so let's turn them into absolute URLS.
+				$url = WP_SITEURL . $url;
+
 				// Get the post id from the url
 				// Does not work for custom post types.
 				$post_id = $this->url_to_postid( $url );
