@@ -179,6 +179,9 @@ class HMTP_Plugin {
 	 * @return array|mixed
 	 */
 	public function get_results( Array $args = array() ) {
+		if ( ! is_object( $this->top_posts ) ) {
+			return;
+		}
 		return $this->top_posts->get_results( $args );
 	}
 
