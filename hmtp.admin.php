@@ -188,7 +188,7 @@ class HMTP_Admin {
 		<?php if ( $results ) : ?>
 			<ol>
 				<?php foreach ( $results as $post ) : ?>
-					<li><?php printf( '<a href="%s">%s (%d)</a>', esc_url( get_permalink( $post['post_id'] ) ), esc_html( get_the_title( $post['post_id'] ) ), absint( $post['views'] ) ); ?></li>
+					<li><?php printf( '<a href="%s">%s</a> (%d)', esc_url( get_permalink( $post['post_id'] ) ), esc_html( get_the_title( $post['post_id'] ) ), absint( $post['views'] ) ); ?></li>
 				<?php endforeach; ?>
 			</ol>
 		<?php else : ?>
