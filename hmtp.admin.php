@@ -183,7 +183,7 @@ class HMTP_Admin {
 
 		?>
 
-		<h4>Top Posts</h4>
+		<h4><?php esc_html_e( 'Top Posts', 'hmtp' ); ?></h4>
 
 		<?php if ( $results ) : ?>
 			<ol>
