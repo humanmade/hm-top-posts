@@ -52,7 +52,7 @@ class Plugin {
 	/**
 	 * @var Top_Posts
 	 */
-	private $top_posts;
+	public $top_posts;
 
 	/**
 	 * @var Opt_Out

@@ -117,16 +117,16 @@ class Admin {
 					'settings_section'
 				);
 			}
-		}
 
-		if ( ! ( defined( 'HMTP_GA_REDIRECT_URL' ) && HMTP_GA_REDIRECT_URL ) ) {
-			add_settings_field(
-				'settings_redirect_url',
-				'Redirect URL',
-				array( $this, 'settings_field_redirect_display' ),
-				'hmtp_settings_page',
-				'settings_section'
-			);
+			if ( ! ( defined( 'HMTP_GA_REDIRECT_URL' ) && HMTP_GA_REDIRECT_URL ) ) {
+				add_settings_field(
+					'settings_redirect_url',
+					'Redirect URL',
+					array( $this, 'settings_field_redirect_display' ),
+					'hmtp_settings_page',
+					'settings_section'
+				);
+			}
 		}
 
 		add_settings_field(
@@ -195,7 +195,11 @@ class Admin {
 	/**
 	 * Output the settings section description
 	 */
-	public function settings_section_display() { ?>
+	public function settings_section_display() {
+
+		if ( ! $this->ga_client->getAccessToken() ) {
+
+		?>
 		<p>
 			Visit
 			<a target="_blank" href="https://code.google.com/apis/console?api=analytics">https://code.google.com/apis/console?api=analytics</a> to generate your client id and client secret.
@@ -203,10 +207,14 @@ class Admin {
 		<ol>
 			<li>Click "New credentials"</li>
 			<li>Choose "OAuth client ID"</li>
-			<li>Select "Other" and enter a name</li>
+			<li>Select "Web application" and enter a name</li>
+			<li>Copy the redirect URI value from the field below into the redirect URI field on the new credential form</li>
 			<li>Fill in the generated client ID and secret below</li>
 		</ol>
 		<?php
+
+		}
+
 	}
 
 	/**
@@ -261,11 +269,13 @@ class Admin {
 		else :
 
 			$props      = $this->ga_service->management_webproperties->listManagementWebproperties( "~all" );
-
 			$deauth_url = wp_nonce_url( add_query_arg( array() ), 'hmtp_deauth', 'hmtp_deauth' );
 
 			?>
 
+			<input type="hidden" name="hmtp_setting[ga_client_id]" value="<?php echo esc_attr( $this->settings['ga_client_id'] ); ?>" />
+			<input type="hidden" name="hmtp_setting[ga_client_secret]" value="<?php echo esc_attr( $this->settings['ga_client_secret'] ); ?>" />
+			<input type="hidden" name="hmtp_setting[ga_redirect_url]" value="<?php echo esc_attr( $this->settings['ga_redirect_url'] ); ?>" />
 			<input type="hidden" name="hmtp_setting[ga_property_id]" value="<?php echo esc_attr( $this->settings['ga_property_id'] ); ?>" />
 			<input type="hidden" name="hmtp_setting[ga_access_token]" value="<?php echo esc_attr( json_encode( $this->settings['ga_access_token'] ) ); ?>" />
 			<input type="hidden" name="hmtp_setting[ga_property_profile_id]" value="<?php echo esc_attr( $this->settings['ga_property_profile_id'] ); ?>" />
