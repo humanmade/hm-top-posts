@@ -12,15 +12,7 @@ Author URI: http://hmn.md
  */
 define( 'HMTP_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
-require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/Google_Client.php';
-require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/contrib/Google_AnalyticsService.php';
-
-require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
-require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
-require_once HMTP_PLUGIN_PATH . 'hmtp.opt-out.php';
-require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
-
-HMTP_Plugin::get_instance();
+add_action( 'plugins_loaded', array( 'HMTP_Plugin', 'get_instance' ) );
 
 /**
  * Class HMTP_Plugin
@@ -72,6 +64,15 @@ class HMTP_Plugin {
 	 * Initialization
 	 */
 	private function __construct() {
+
+		if ( ! class_exists(  ) ) {
+			require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/Google/autoload.php';
+		}
+
+		require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
+		require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
+		require_once HMTP_PLUGIN_PATH . 'hmtp.opt-out.php';
+		require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
 
 		$this->settings = wp_parse_args(
 			get_option( 'hmtp_setting', array() ),
