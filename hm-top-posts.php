@@ -69,7 +69,7 @@ class Plugin {
 	 */
 	private function __construct() {
 
-		require_once HMTP_PLUGIN_PATH . 'google-api-php-client/vendor/autoload.php';
+		require_once HMTP_PLUGIN_PATH . 'vendor/autoload.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.opt-out.php';
