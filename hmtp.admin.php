@@ -97,25 +97,26 @@ class Admin {
 			'hmtp_settings_page'
 		);
 
-		if ( ! ( defined( 'HMTP_GA_CLIENT_ID' ) && HMTP_GA_CLIENT_ID ) ) {
-			add_settings_field(
-				'settings_client_id',
-				'Client ID',
-				array( $this, 'settings_field_client_id_display' ),
-				'hmtp_settings_page',
-				'settings_section'
-			);
-		}
+		if ( ! $this->ga_client->getAccessToken() ) {
+			if ( ! ( defined( 'HMTP_GA_CLIENT_ID' ) && HMTP_GA_CLIENT_ID ) ) {
+				add_settings_field(
+					'settings_client_id',
+					'Client ID',
+					array( $this, 'settings_field_client_id_display' ),
+					'hmtp_settings_page',
+					'settings_section'
+				);
+			}
 
-		if ( ! ( defined( 'HMTP_GA_CLIENT_SECRET' ) && HMTP_GA_CLIENT_SECRET ) ) {
-			add_settings_field(
-				'settings_client_secret',
-				'Client Secret',
-				array( $this, 'settings_field_client_secret_display' ),
-				'hmtp_settings_page',
-				'settings_section'
-			);
-
+			if ( ! ( defined( 'HMTP_GA_CLIENT_SECRET' ) && HMTP_GA_CLIENT_SECRET ) ) {
+				add_settings_field(
+					'settings_client_secret',
+					'Client Secret',
+					array( $this, 'settings_field_client_secret_display' ),
+					'hmtp_settings_page',
+					'settings_section'
+				);
+			}
 		}
 
 		if ( ! ( defined( 'HMTP_GA_REDIRECT_URL' ) && HMTP_GA_REDIRECT_URL ) ) {
@@ -197,8 +198,14 @@ class Admin {
 	public function settings_section_display() { ?>
 		<p>
 			Visit
-			<a target="_blank" href="https://code.google.com/apis/console?api=analytics">https://code.google.com/apis/console?api=analytics</a> to generate your client id, client secret, and to register your redirect uri.
+			<a target="_blank" href="https://code.google.com/apis/console?api=analytics">https://code.google.com/apis/console?api=analytics</a> to generate your client id and client secret.
 		</p>
+		<ol>
+			<li>Click "New credentials"</li>
+			<li>Choose "OAuth client ID"</li>
+			<li>Select "Other" and enter a name</li>
+			<li>Fill in the generated client ID and secret below</li>
+		</ol>
 		<?php
 	}
 
@@ -240,7 +247,7 @@ class Admin {
 		}
 
 		// Show authenticate button only.
-		if ( ! $this->ga_client->getAccessToken() ) :
+		if ( ! $this->ga_client->getAccessToken() || $this->ga_client->isAccessTokenExpired() ) :
 
 			$this->ga_client->setApprovalPrompt( 'force' );
 			$this->ga_client->setAccessType( 'offline' );
@@ -320,6 +327,14 @@ class Admin {
 	public function settings_sanitize( $input ) {
 
 		$input['allow_opt_out'] = isset( $input['allow_opt_out'] );
+
+		// Reset token if client ID / secret change
+		if ( $input['ga_client_id'] !== $this->settings['ga_client_id'] ) {
+			delete_option( 'hmtp_ga_token' );
+		}
+		if ( $input['ga_client_secret'] !== $this->settings['ga_client_secret'] ) {
+			delete_option( 'hmtp_ga_token' );
+		}
 
 		return $input;
 

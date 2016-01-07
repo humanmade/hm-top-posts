@@ -185,7 +185,7 @@ class Plugin {
 	 * @param array $args
 	 * @return array|mixed
 	 */
-	public function get_results( Array $args = array() ) {
+	public function get_results( array $args = array() ) {
 		if ( ! is_object( $this->top_posts ) ) {
 			return false;
 		}
@@ -200,6 +200,18 @@ class Plugin {
  * @param  array $args
  * @return array or top posts.
  */
-function get_top_posts( Array $args = array() ) {
+function get_top_posts( array $args = array() ) {
 	return Plugin::get_instance()->get_results( $args );
+}
+
+/**
+ * Used for async fetching with TLC transients
+ *
+ * @return array|mixed
+ */
+function fetch_results( array $args = array() ) {
+	if ( ! Plugin::get_instance()->top_posts ) {
+		return array();
+	}
+	return Plugin::get_instance()->top_posts->fetch_results( $args );
 }

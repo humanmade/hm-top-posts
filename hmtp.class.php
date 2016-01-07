@@ -93,7 +93,7 @@ class Top_Posts {
 			return tlc_transient( $query_id )
 				->expires_in( $this->expiry )
 				->background_only()
-				->updates_with( array( $this, 'fetch_results' ), array( $args ) )
+				->updates_with( 'HMTP\\fetch_results', array( $args ) )
 				->get();
 
 		} else {
@@ -118,7 +118,7 @@ class Top_Posts {
 	 * @param array $args
 	 * @return array
 	 */
-	function fetch_results( $args ) {
+	public function fetch_results( $args ) {
 
 		$dimensions  = array( 'pagePath' );
 		$metrics     = array( 'pageviews' );
