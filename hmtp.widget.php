@@ -1,8 +1,10 @@
 <?php
 
-add_action( 'widgets_init', function() { register_widget( 'HMTP_Widget' ); });
+namespace HMTP;
 
-class HMTP_Widget extends WP_Widget {
+add_action( 'widgets_init', function () { register_widget( 'HMTP\\Widget' ); } );
+
+class Widget extends \WP_Widget {
 
 	public function __construct() {
 		parent::__construct(
@@ -25,8 +27,9 @@ class HMTP_Widget extends WP_Widget {
 		// Demo.
 		$results = hmtp_get_top_posts( $instance['args'] );
 
-		if ( ! $results )
+		if ( ! $results ) {
 			return;
+		}
 
 		echo $args['before_widget'];
 
@@ -43,10 +46,10 @@ class HMTP_Widget extends WP_Widget {
 		<ol class="hmtp-widget">
 			<?php foreach ( $results as $post ) : ?>
 				<li><?php printf(
-					'<a href="%s">%s</a>',
-					esc_url( get_permalink( $post['post_id'] ) ),
-					esc_html( get_the_title( $post['post_id'] ) )
-				); ?></li>
+						'<a href="%s">%s</a>',
+						esc_url( get_permalink( $post['post_id'] ) ),
+						esc_html( get_the_title( $post['post_id'] ) )
+					); ?></li>
 			<?php endforeach; ?>
 		</ol>
 
@@ -66,19 +69,19 @@ class HMTP_Widget extends WP_Widget {
 	 *
 	 * @param array $instance Previously saved values from database.
 	 */
- 	public function form( $instance ) {
+	public function form( $instance ) {
 
- 		$title = isset( $instance[ 'title' ] ) ? $instance[ 'title' ] : 'Most Popular';
+		$title = isset( $instance['title'] ) ? $instance['title'] : 'Most Popular';
 
- 		$args = wp_parse_args(
- 			(array) $instance['args'],
- 			array(
- 				'count'     => 5,
- 				'post_type' => array( 'post' ),
- 				'taxonomy' => null,
-				'terms' => array()
- 			)
- 		);
+		$args = wp_parse_args(
+			(array) $instance['args'],
+			array(
+				'count'     => 5,
+				'post_type' => array( 'post' ),
+				'taxonomy'  => null,
+				'terms'     => array(),
+			)
+		);
 
 		?>
 
@@ -95,7 +98,7 @@ class HMTP_Widget extends WP_Widget {
 		<p>
 			<label for="<?php echo $this->get_field_id( 'args' ); ?>-post-type">Post Type</label>
 			<select class="widefat" multiple id="<?php echo $this->get_field_id( 'args' ); ?>-post-type" name="<?php echo $this->get_field_name( 'args' ); ?>[post_type][]">
-				<?php foreach( get_post_types( array( 'public' => true, 'publicly_queryable' => true  ) ) as $post_type ) : ?>
+				<?php foreach ( get_post_types( array( 'public' => true, 'publicly_queryable' => true ) ) as $post_type ) : ?>
 					<option <?php selected( true, in_array( $post_type, (array) $args['post_type'] ) ); ?>><?php echo esc_html( $post_type ); ?></option>
 				<?php endforeach; ?>
 			</select>
@@ -132,21 +135,24 @@ class HMTP_Widget extends WP_Widget {
 	 * @return array Updated safe values to be saved.
 	 */
 	public function update( $new_instance, $old_instance ) {
-		$instance = array();
+		$instance          = array();
 		$instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
 
 		$instance['args'] = array();
 
 		$instance['args']['count'] = intval( $new_instance['args']['count'] );
 
-		if ( ! empty( $new_instance['args']['post_type'] ) )
+		if ( ! empty( $new_instance['args']['post_type'] ) ) {
 			$instance['args']['post_type'] = $new_instance['args']['post_type'];
+		}
 
-		if ( ! empty( $new_instance['args']['taxonomy'] ) && taxonomy_exists( $new_instance['args']['taxonomy'] ) )
+		if ( ! empty( $new_instance['args']['taxonomy'] ) && taxonomy_exists( $new_instance['args']['taxonomy'] ) ) {
 			$instance['args']['taxonomy'] = $new_instance['args']['taxonomy'];
+		}
 
-		if ( ! empty( $new_instance['args']['terms'] ) )
+		if ( ! empty( $new_instance['args']['terms'] ) ) {
 			$instance['args']['terms'] = array_map( 'trim', explode( ',', $new_instance['args']['terms'] ) );
+		}
 
 		return $instance;
 

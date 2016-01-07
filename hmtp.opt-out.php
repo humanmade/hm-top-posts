@@ -1,9 +1,11 @@
 <?php
 
+namespace HMTP;
+
 /**
  * Class HMTP_Opt_Out
  */
-class HMTP_Opt_Out {
+class Opt_Out {
 
 	/**
 	 * Instance of this class.

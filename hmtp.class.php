@@ -1,5 +1,7 @@
 <?php
 
+namespace HMTP;
+
 /**
  * Get Top Articles by Google Analytics.
  *
@@ -14,7 +16,7 @@
  *
  * @param (array) $args
  */
-class HMTP_Top_Posts {
+class Top_Posts {
 
 	/**
 	 * @var string
@@ -45,7 +47,7 @@ class HMTP_Top_Posts {
 	);
 
 	/**
-	 * @var Google_AnalyticsService
+	 * @var \Google_Service_Analytics
 	 */
 	private $analytics;
 
@@ -55,10 +57,10 @@ class HMTP_Top_Posts {
 	private $ga_property_profile_id;
 
 	/**
-	 * @param                         $ga_property_profile_id
-	 * @param Google_AnalyticsService $analytics
+	 * @param  string                   $ga_property_profile_id
+	 * @param \Google_Service_Analytics $analytics
 	 */
-	function __construct( $ga_property_profile_id, Google_AnalyticsService $analytics ) {
+	function __construct( $ga_property_profile_id, \Google_Service_Analytics $analytics ) {
 
 		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - YEAR_IN_SECONDS / 12 );
 		$this->args_defaults['end_date']   = date( 'Y-m-d', time() );
@@ -87,12 +89,12 @@ class HMTP_Top_Posts {
 			}
 		}
 
-		$this->query_id = 'hmtp_' . hash( 'md5', $this->ga_property_profile_id . json_encode( $args ) );
+		$query_id = 'hmtp_' . hash( 'md5', $this->ga_property_profile_id . json_encode( $args ) );
 
 		// If TLC Transients exists, use that.
-		if ( class_exists( 'TLC_Transient' ) ) {
+		if ( class_exists( '\\TLC_Transient' ) ) {
 
-			return tlc_transient( $this->query_id )
+			return tlc_transient( $query_id )
 				->expires_in( $this->expiry )
 				->background_only()
 				->updates_with( array( $this, 'fetch_results' ), array( $args ) )
@@ -100,13 +102,13 @@ class HMTP_Top_Posts {
 
 		} else {
 
-			if ( $results = get_transient( $this->query_id ) ) {
+			if ( $results = get_transient( $query_id ) ) {
 				return $results;
 			}
 
 			$results = $this->fetch_results( $args );
 
-			set_transient( $this->query_id, $results, $this->expiry );
+			set_transient( $query_id, $results, $this->expiry );
 
 			return $results;
 
@@ -139,7 +141,7 @@ class HMTP_Top_Posts {
 		);
 
 		if ( ! empty( $this->args['filters'] ) ) {
-			$this->opt_params['filters'] = $this->args['filters'];
+			$opt_params['filters'] = $this->args['filters'];
 		}
 
 		while ( count( $top_posts ) < $args['count'] ) {
@@ -152,9 +154,9 @@ class HMTP_Top_Posts {
 					'ga:pageviews',
 					$opt_params
 				);
-			} catch ( Exception $e ) {
+			} catch ( \Exception $e ) {
 				update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
-				return;
+				return array();
 			}
 
 			if ( count( $results->getRows() ) < 1 ) {

@@ -7,20 +7,23 @@ Author: Human Made Limited
 Author URI: http://hmn.md
 */
 
+namespace HMTP;
+
 /**
  * The absolute path to the plugin directory
  */
 define( 'HMTP_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
-add_action( 'plugins_loaded', array( 'HMTP_Plugin', 'get_instance' ) );
+add_action( 'plugins_loaded', array( 'HMTP\\Plugin', 'get_instance' ) );
 
 /**
  * Class HMTP_Plugin
  */
-class HMTP_Plugin {
+class Plugin {
 
 	/**
 	 * The class instance.
+	 *
 	 * @var null
 	 */
 	private static $instance = null;
@@ -35,28 +38,29 @@ class HMTP_Plugin {
 	/**
 	 * An instance of the Google API class
 	 *
-	 * @var Google_Client
+	 * @var \Google_Client
 	 */
 	private $ga_client;
 
 	/**
 	 * An instance of the Google Analytics Service class
-	 * @var Google_AnalyticsService
+	 *
+	 * @var \Google_Service_Analytics
 	 */
 	private $ga_service;
 
 	/**
-	 * @var HMTP_Top_Posts
+	 * @var Top_Posts
 	 */
 	private $top_posts;
 
 	/**
-	 * @var A
+	 * @var Opt_Out
 	 */
 	private $opt_out;
 
 	/**
-	 * @var HMTP_Admin
+	 * @var Admin
 	 */
 	private $admin;
 
@@ -65,10 +69,7 @@ class HMTP_Plugin {
 	 */
 	private function __construct() {
 
-		if ( ! class_exists(  ) ) {
-			require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/Google/autoload.php';
-		}
-
+		require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/Google/autoload.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.opt-out.php';
@@ -82,7 +83,7 @@ class HMTP_Plugin {
 				'ga_property_profile_id' => null,
 				'ga_client_id'           => null,
 				'ga_client_secret'       => null,
-				'ga_redirect_url'        => null,
+				'ga_redirect_url'        => admin_url( 'options-general.php?page=hmtp_settings_page' ),
 				'allow_opt_out'          => false,
 			)
 		);
@@ -101,7 +102,7 @@ class HMTP_Plugin {
 
 		$this->token = get_option( 'hmtp_ga_token' );
 
-		$this->ga_client = new Google_Client();
+		$this->ga_client = new \Google_Client();
 
 		$this->ga_client->setApplicationName( "WP Top Posts by GA" );
 
@@ -109,23 +110,32 @@ class HMTP_Plugin {
 		// client id, client secret, and to register your redirect uri.
 		$this->ga_client->setClientId( $this->settings['ga_client_id'] );
 		$this->ga_client->setClientSecret( $this->settings['ga_client_secret'] );
-		$this->ga_client->setRedirectUri( $this->settings['ga_redirect_url'] );
-		$this->ga_client->setUseObjects( true );
+		$this->ga_client->setRedirectUri( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
+		$this->ga_client->setScopes( 'https://www.googleapis.com/auth/analytics' );
 
-		if ( $this->token )
+		if ( $this->token ) {
 			$this->ga_client->setAccessToken( $this->token );
 
-		$this->ga_service = new Google_AnalyticsService( $this->ga_client );
+			// Refresh token if necessary
+			if ( $this->ga_client->isAccessTokenExpired() && $this->ga_client->getRefreshToken() ) {
+				$this->ga_client->refreshToken( $this->ga_client->getRefreshToken() );
+				update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
+			}
+		}
+
+		$this->ga_service = new \Google_Service_Analytics( $this->ga_client );
 
 		add_action( 'init', array( $this, 'init' ) );
 
-		$this->admin = new HMTP_Admin( $this->settings, $this->ga_client, $this->ga_service );
+		$this->admin = new Admin( $this->settings, $this->ga_client, $this->ga_service );
 
-		if ( $this->settings['ga_property_profile_id'] )
-			$this->top_posts = new HMTP_Top_Posts( $this->settings['ga_property_profile_id'], $this->ga_service );
+		if ( $this->settings['ga_property_profile_id'] ) {
+			$this->top_posts = new Top_Posts( $this->settings['ga_property_profile_id'], $this->ga_service );
+		}
 
-		if ( $this->settings['allow_opt_out'] )
-			$this->opt_out = HMTP_Opt_Out::get_instance();
+		if ( $this->settings['allow_opt_out'] ) {
+			$this->opt_out = Opt_Out::get_instance();
+		}
 
 	}
 
@@ -152,22 +162,17 @@ class HMTP_Plugin {
 	 */
 	public function init() {
 
-		if ( ! current_user_can( 'manage_options' ) )
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
+		}
 
 		// Authenticate.
 		if ( isset( $_GET['code'] ) ) {
 
-			$this->ga_client->authenticate();
+			$this->ga_client->authenticate( sanitize_text_field( $_GET['code'] ) );
 			update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
 
-			wp_safe_redirect(
-				add_query_arg(
-					array( 'page' => 'hmtp_settings_page' ),
-					get_admin_url() . 'options-general.php'
-				)
-			);
-
+			wp_safe_redirect( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
 			exit;
 		}
 
@@ -195,7 +200,5 @@ class HMTP_Plugin {
  * @return array or top posts.
  */
 function hmtp_get_top_posts( Array $args = array() ) {
-
-	return HMTP_Plugin::get_instance()->get_results( $args );
-
+	return Plugin::get_instance()->get_results( $args );
 }
