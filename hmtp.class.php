@@ -5,8 +5,8 @@ namespace HMTP;
 /**
  * Get Top Articles by Google Analytics.
  *
- * Get the results of the query stored for quiery_id. If it doesn't exist, a new one is generated based on $args.
- * Retruns an array of  $post_id => $page_views.
+ * Get the results of the query stored for query_id. If it doesn't exist, a new one is generated based on $args.
+ * Returns an array of  $post_id => $page_views.
  *
  * USAGE
  *
@@ -18,10 +18,6 @@ namespace HMTP;
  */
 class Top_Posts {
 
-	/**
-	 * @var string
-	 */
-	private $prefix = 'hmtp';
 	/**
 	 * @var int
 	 */

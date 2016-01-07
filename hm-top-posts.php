@@ -69,11 +69,12 @@ class Plugin {
 	 */
 	private function __construct() {
 
-		require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/Google/autoload.php';
+		require_once HMTP_PLUGIN_PATH . 'google-api-php-client/vendor/autoload.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.opt-out.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
+		require_once HMTP_PLUGIN_PATH . 'hmtp.template-tags.php';
 
 		$this->settings = wp_parse_args(
 			get_option( 'hmtp_setting', array() ),
@@ -110,7 +111,7 @@ class Plugin {
 		// client id, client secret, and to register your redirect uri.
 		$this->ga_client->setClientId( $this->settings['ga_client_id'] );
 		$this->ga_client->setClientSecret( $this->settings['ga_client_secret'] );
-		$this->ga_client->setRedirectUri( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
+		$this->ga_client->setRedirectUri( $this->settings['ga_redirect_url'] );
 		$this->ga_client->setScopes( 'https://www.googleapis.com/auth/analytics' );
 
 		if ( $this->token ) {
@@ -186,7 +187,7 @@ class Plugin {
 	 */
 	public function get_results( Array $args = array() ) {
 		if ( ! is_object( $this->top_posts ) ) {
-			return;
+			return false;
 		}
 		return $this->top_posts->get_results( $args );
 	}
@@ -199,6 +200,6 @@ class Plugin {
  * @param  array $args
  * @return array or top posts.
  */
-function hmtp_get_top_posts( Array $args = array() ) {
+function get_top_posts( Array $args = array() ) {
 	return Plugin::get_instance()->get_results( $args );
 }

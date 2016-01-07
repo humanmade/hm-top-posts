@@ -73,13 +73,7 @@ class Admin {
 			delete_option( 'hmtp_setting' );
 			delete_option( 'hmtp_ga_token' );
 
-			wp_safe_redirect(
-				add_query_arg(
-					array( 'page' => 'hmtp_settings_page' ),
-					get_admin_url() . 'options-general.php'
-				)
-			);
-
+			wp_safe_redirect( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
 			exit;
 		}
 
@@ -93,69 +87,62 @@ class Admin {
 		register_setting(
 			'hmtp_settings',
 			'hmtp_setting',
-			array( $this, 'hmtp_settings_sanitize' )
+			array( $this, 'settings_sanitize' )
 		);
 
 		add_settings_section(
-			'hmtp_settings_section',
+			'settings_section',
 			'Top Posts Settings',
-			array( $this, 'hmtp_settings_section_display' ),
+			array( $this, 'settings_section_display' ),
 			'hmtp_settings_page'
 		);
 
 		if ( ! ( defined( 'HMTP_GA_CLIENT_ID' ) && HMTP_GA_CLIENT_ID ) ) {
 			add_settings_field(
-				'hmtp_settings_client_id',
+				'settings_client_id',
 				'Client ID',
-				array( $this, 'hmtp_settings_field_client_id_display' ),
+				array( $this, 'settings_field_client_id_display' ),
 				'hmtp_settings_page',
-				'hmtp_settings_section'
+				'settings_section'
 			);
 		}
 
 		if ( ! ( defined( 'HMTP_GA_CLIENT_SECRET' ) && HMTP_GA_CLIENT_SECRET ) ) {
 			add_settings_field(
-				'hmtp_settings_client_secret',
+				'settings_client_secret',
 				'Client Secret',
-				array( $this, 'hmtp_settings_field_client_secret_display' ),
+				array( $this, 'settings_field_client_secret_display' ),
 				'hmtp_settings_page',
-				'hmtp_settings_section'
+				'settings_section'
 			);
 
 		}
 
 		if ( ! ( defined( 'HMTP_GA_REDIRECT_URL' ) && HMTP_GA_REDIRECT_URL ) ) {
 			add_settings_field(
-				'hmtp_settings_redirect_url',
+				'settings_redirect_url',
 				'Redirect URL',
-				array( $this, 'hmtp_settings_field_redirect_display' ),
+				array( $this, 'settings_field_redirect_display' ),
 				'hmtp_settings_page',
-				'hmtp_settings_section'
+				'settings_section'
 			);
 		}
 
 		add_settings_field(
-			'hmtp_settings_property',
+			'settings_property',
 			'Select Web Property',
-			array( $this, 'hmtp_settings_field_property_display' ),
+			array( $this, 'settings_field_property_display' ),
 			'hmtp_settings_page',
-			'hmtp_settings_section'
+			'settings_section'
 		);
 
 		add_settings_field(
-			'hmtp_settings_allow_opt_out',
+			'settings_allow_opt_out',
 			'Allow Opt-Out',
-			array( $this, 'hmtp_settings_field_opt_out_display' ),
+			array( $this, 'settings_field_opt_out_display' ),
 			'hmtp_settings_page',
-			'hmtp_settings_section'
+			'settings_section'
 		);
-
-	}
-
-
-	public function admin_menu() {
-
-		add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
 
 	}
 
@@ -183,7 +170,7 @@ class Admin {
 			<?php
 
 			// Demo.
-			$results = hmtp_get_top_posts( array( 'post_type' => 'any' ) );
+			$results = get_top_posts( array( 'post_type' => 'any' ) );
 
 			?>
 
@@ -207,7 +194,7 @@ class Admin {
 	/**
 	 * Output the settings section description
 	 */
-	public function hmtp_settings_section_display() { ?>
+	public function settings_section_display() { ?>
 		<p>
 			Visit
 			<a target="_blank" href="https://code.google.com/apis/console?api=analytics">https://code.google.com/apis/console?api=analytics</a> to generate your client id, client secret, and to register your redirect uri.
@@ -218,7 +205,7 @@ class Admin {
 	/**
 	 * Display the client ID field
 	 */
-	public function hmtp_settings_field_client_id_display() { ?>
+	public function settings_field_client_id_display() { ?>
 		<input class="widefat" type="text" name="hmtp_setting[ga_client_id]" value="<?php echo esc_attr( $this->settings['ga_client_id'] ); ?>" />
 		<?php
 	}
@@ -226,7 +213,7 @@ class Admin {
 	/**
 	 * Display the client secret field
 	 */
-	public function hmtp_settings_field_client_secret_display() { ?>
+	public function settings_field_client_secret_display() { ?>
 		<input class="widefat" type="password" name="hmtp_setting[ga_client_secret]" value="<?php echo esc_attr( $this->settings['ga_client_secret'] ); ?>" />
 		<?php
 	}
@@ -234,7 +221,7 @@ class Admin {
 	/**
 	 * Display the redirect URL field
 	 */
-	public function hmtp_settings_field_redirect_display() { ?>
+	public function settings_field_redirect_display() { ?>
 		<input class="widefat" type="text" readonly="readonly" name="hmtp_setting[ga_redirect_url]" value="<?php echo esc_attr( $this->settings['ga_redirect_url'] ); ?>" />
 		<?php
 	}
@@ -242,7 +229,7 @@ class Admin {
 	/**
 	 * Display the property dropdown field
 	 */
-	public function hmtp_settings_field_property_display() {
+	public function settings_field_property_display() {
 
 		// Do not show the authenticate button or inputs if api details have not been added.
 		if ( ! $this->settings['ga_client_id'] || ! $this->settings['ga_client_secret'] || ! $this->settings['ga_redirect_url'] ) {
@@ -316,7 +303,7 @@ class Admin {
 	/**
 	 * Display the post optout checkbox field
 	 */
-	public function hmtp_settings_field_opt_out_display() { ?>
+	public function settings_field_opt_out_display() { ?>
 		<label>
 			<input type="checkbox" name="hmtp_setting[allow_opt_out]" <?php checked( true, $this->settings['allow_opt_out'] ); ?>/>
 			Allow excluding individual posts from Top Posts results.
@@ -330,7 +317,7 @@ class Admin {
 	 * @param $input
 	 * @return bool
 	 */
-	public function hmtp_settings_sanitize( $input ) {
+	public function settings_sanitize( $input ) {
 
 		$input['allow_opt_out'] = isset( $input['allow_opt_out'] );
 

@@ -2,7 +2,9 @@
 
 namespace HMTP;
 
-add_action( 'widgets_init', function () { register_widget( 'HMTP\\Widget' ); } );
+add_action( 'widgets_init', function () {
+	register_widget( 'HMTP\\Widget' );
+} );
 
 class Widget extends \WP_Widget {
 
@@ -25,7 +27,7 @@ class Widget extends \WP_Widget {
 	public function widget( $args, $instance ) {
 
 		// Demo.
-		$results = hmtp_get_top_posts( $instance['args'] );
+		$results = get_top_posts( $instance['args'] );
 
 		if ( ! $results ) {
 			return;
