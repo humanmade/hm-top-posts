@@ -1,0 +1,14 @@
+{
+    "name": "humanmade/hm-top-posts",
+    "description": "Plugin to fetch top posts from a Google Analytics account",
+    "require": {
+        "google/apiclient": "^2.0.0@RC"
+    },
+    "license": "GPLv3",
+    "authors": [
+        {
+            "name": "Joe Hoyle",
+            "email": "joe@hmn.md"
+        }
+    ]
+}
