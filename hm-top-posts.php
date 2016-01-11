@@ -55,6 +55,11 @@ class Plugin {
 	public $top_posts;
 
 	/**
+	 * @var Top_Blogs
+	 */
+	public $top_blogs;
+
+	/**
 	 * @var Opt_Out
 	 */
 	private $opt_out;
@@ -70,7 +75,8 @@ class Plugin {
 	private function __construct() {
 
 		require_once HMTP_PLUGIN_PATH . 'vendor/autoload.php';
-		require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
+		require_once HMTP_PLUGIN_PATH . 'hmtp.top-posts.php';
+		require_once HMTP_PLUGIN_PATH . 'hmtp.top-blogs.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.opt-out.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
@@ -86,6 +92,7 @@ class Plugin {
 				'ga_client_secret'       => null,
 				'ga_redirect_url'        => admin_url( 'options-general.php?page=hmtp_settings_page' ),
 				'allow_opt_out'          => false,
+				'allow_opt_out_blogs'    => false,
 			)
 		);
 
@@ -112,7 +119,7 @@ class Plugin {
 		$this->ga_client->setClientId( $this->settings['ga_client_id'] );
 		$this->ga_client->setClientSecret( $this->settings['ga_client_secret'] );
 		$this->ga_client->setRedirectUri( $this->settings['ga_redirect_url'] );
-		$this->ga_client->setScopes( 'https://www.googleapis.com/auth/analytics' );
+		$this->ga_client->setScopes( 'https://www.googleapis.com/auth/analytics.readonly' );
 
 		if ( $this->token ) {
 			$this->ga_client->setAccessToken( $this->token );
@@ -132,9 +139,12 @@ class Plugin {
 
 		if ( $this->settings['ga_property_profile_id'] ) {
 			$this->top_posts = new Top_Posts( $this->settings['ga_property_profile_id'], $this->ga_service );
+			if ( is_multisite() ) {
+				$this->top_blogs = new Top_Blogs( $this->settings['ga_property_profile_id'], $this->ga_service );
+			}
 		}
 
-		if ( $this->settings['allow_opt_out'] ) {
+		if ( $this->settings['allow_opt_out'] || $this->settings['allow_opt_out_blogs'] ) {
 			$this->opt_out = Opt_Out::get_instance();
 		}
 
@@ -207,11 +217,25 @@ function get_top_posts( array $args = array() ) {
 /**
  * Used for async fetching with TLC transients
  *
+ * @param array $args
  * @return array|mixed
  */
-function fetch_results( array $args = array() ) {
+function top_posts_fetch_results( array $args = array() ) {
 	if ( ! Plugin::get_instance()->top_posts ) {
 		return array();
 	}
 	return Plugin::get_instance()->top_posts->fetch_results( $args );
+}
+
+/**
+ * Get highest traffic sites on a multisite network.
+ *
+ * @param array $args
+ * @return array
+ */
+function top_blogs_fetch_results( array $args = array() ) {
+	if ( ! Plugin::get_instance()->top_blogs ) {
+		return array();
+	}
+	return Plugin::get_instance()->top_blogs->fetch_results( $args );
 }

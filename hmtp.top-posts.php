@@ -72,7 +72,7 @@ class Top_Posts {
 	 * @param array $args
 	 * @return array|mixed
 	 */
-	function get_results( Array $args = array() ) {
+	function get_results( array $args = array() ) {
 
 		$args = wp_parse_args( $args, $this->args_defaults );
 
@@ -93,7 +93,7 @@ class Top_Posts {
 			return tlc_transient( $query_id )
 				->expires_in( $this->expiry )
 				->background_only()
-				->updates_with( 'HMTP\\fetch_results', array( $args ) )
+				->updates_with( 'HMTP\\top_posts_fetch_results', array( $args ) )
 				->get();
 
 		} else {
@@ -120,9 +120,7 @@ class Top_Posts {
 	 */
 	public function fetch_results( $args ) {
 
-		$dimensions  = array( 'pagePath' );
-		$metrics     = array( 'pageviews' );
-		$max_results = 1000;
+		$max_results = apply_filters( 'hmtp_max_results', 1000 );
 
 		// Build up a list of top posts.
 		// Keeps going looping through - $max_results results at a time - until there are either enough posts or no more results from GA.
@@ -130,7 +128,7 @@ class Top_Posts {
 		$start_index = 1;
 
 		$opt_params = array(
-			'dimensions'  => 'ga:pagePath',
+			'dimensions'  => 'ga:hostname,ga:pagePath',
 			'sort'        => '-ga:pageviews',
 			'max-results' => $max_results,
 			'start-index' => $start_index,
@@ -212,7 +210,12 @@ class Top_Posts {
 				$top_posts[ $post_id ] = array(
 					'post_id' => $post_id,
 					'views'   => $result[1],
+					'blog_id' => false,
 				);
+
+				if ( is_multisite() ) {
+					$top_posts[ $post_id ]['blog_id'] = $this->get_blog_id_from_host( $result[0] );
+				}
 
 				// break when we have enough posts.
 				if ( isset( $top_posts ) && count( $top_posts ) >= $args['count'] ) {
@@ -226,29 +229,6 @@ class Top_Posts {
 		}
 
 		return $top_posts;
-
-	}
-
-	/**
-	 * Cached version of url_to_postid, which can be expensive.
-	 *
-	 * Taken from wpcom_vip_url_to_postid
-	 * Examine a url and try to determine the post ID it represents.
-	 *
-	 * @param string $url Permalink to check.
-	 * @return int Post ID, or 0 on failure.
-	 */
-	private function url_to_postid( $url ) {
-
-		$cache_key = md5( $url );
-		$post_id   = wp_cache_get( $cache_key, 'url_to_postid' );
-
-		if ( false === $post_id ) {
-			$post_id = url_to_postid( $url ); // returns 0 on failure, so need to catch the false condition
-			wp_cache_add( $cache_key, $post_id, 'url_to_postid' );
-		}
-
-		return $post_id;
 
 	}
 
