@@ -178,7 +178,7 @@ class Plugin {
 		}
 
 		// Authenticate.
-		if ( isset( $_GET['code'] ) ) {
+		if ( isset( $_GET['page'] ) && 'hmtp_settings_page' === $_GET['page'] && isset( $_GET['code'] ) ) {
 
 			$this->ga_client->authenticate( sanitize_text_field( $_GET['code'] ) );
 			update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
