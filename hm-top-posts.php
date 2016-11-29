@@ -119,7 +119,7 @@ class Plugin {
 		$this->ga_client->setClientId( $this->settings['ga_client_id'] );
 		$this->ga_client->setClientSecret( $this->settings['ga_client_secret'] );
 		$this->ga_client->setRedirectUri( $this->settings['ga_redirect_url'] );
-		$this->ga_client->setScopes( 'https://www.googleapis.com/auth/analytics.readonly' );
+		$this->ga_client->setScopes( 'https://www.googleapis.com/auth/analytics' );
 
 		if ( $this->token ) {
 			$this->ga_client->setAccessToken( $this->token );

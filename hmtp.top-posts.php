@@ -128,6 +128,7 @@ class Top_Posts {
 		$start_index = 1;
 
 		$opt_params = array(
+			'filters'     => 'ga:hostname=@' . parse_url( WP_SITEURL, PHP_URL_HOST ),
 			'dimensions'  => 'ga:hostname,ga:pagePath',
 			'sort'        => '-ga:pageviews',
 			'max-results' => $max_results,
@@ -159,7 +160,7 @@ class Top_Posts {
 
 			foreach ( $results->getRows() as $result ) {
 
-				$url = str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[0] ) );
+				$url = str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result[1] ) );
 
 				// URls are relative so let's turn them into absolute URLS.
 				$url = WP_SITEURL . $url;
@@ -209,19 +210,14 @@ class Top_Posts {
 				// Build an array of $post_id => $pageviews
 				$top_posts[ $post_id ] = array(
 					'post_id' => $post_id,
-					'views'   => $result[1],
+					'views'   => $result[2],
 					'blog_id' => false,
 				);
-
-				if ( is_multisite() ) {
-					$top_posts[ $post_id ]['blog_id'] = $this->get_blog_id_from_host( $result[0] );
-				}
 
 				// break when we have enough posts.
 				if ( isset( $top_posts ) && count( $top_posts ) >= $args['count'] ) {
 					break;
 				}
-
 			}
 
 			$opt_params['start-index'] += $max_results;
@@ -232,4 +228,26 @@ class Top_Posts {
 
 	}
 
+	/**
+	 * Cached version of url_to_postid, which can be expensive.
+	 *
+	 * Taken from wpcom_vip_url_to_postid
+	 * Examine a url and try to determine the post ID it represents.
+	 *
+	 * @param string $url Permalink to check.
+	 * @return int Post ID, or 0 on failure.
+	 */
+	private function url_to_postid( $url ) {
+
+		$cache_key = md5( $url );
+		$post_id   = wp_cache_get( $cache_key, 'url_to_postid' );
+
+		if ( false === $post_id ) {
+			$post_id = url_to_postid( $url ); // returns 0 on failure, so need to catch the false condition
+			wp_cache_add( $cache_key, $post_id, 'url_to_postid' );
+		}
+
+		return $post_id;
+
+	}
 }
