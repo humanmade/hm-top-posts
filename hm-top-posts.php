@@ -82,12 +82,7 @@ class Plugin {
 		require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.template-tags.php';
 
-		try {
-			get_settings_handler()->get_option( 'hmtp_setting' );
-		} catch ( \Exception $e ) {
-			update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
-			return array();
-		}
+		$options = get_settings_handler()->get_option( 'hmtp_setting' );
 		$this->token = get_settings_handler()->get_option( 'hmtp_ga_token' );
 		if ( hmtp_is_network_activated() ) {
 			$ga_redirect_url = network_admin_url( 'settings.php?page=hmtp_settings_page' );
