@@ -85,7 +85,7 @@ class Top_Posts {
 			}
 		}
 
-		$query_id = 'hmtp_' . hash( 'md5', $this->ga_property_profile_id . json_encode( $args ) );
+		$query_id = 'hmtp_' . hash( 'md5', $this->ga_property_profile_id . json_encode( $args ) . get_current_blog_id() );
 
 		// If TLC Transients exists, use that.
 		if ( class_exists( '\\TLC_Transient' ) ) {

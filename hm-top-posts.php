@@ -82,15 +82,28 @@ class Plugin {
 		require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
 		require_once HMTP_PLUGIN_PATH . 'hmtp.template-tags.php';
 
+		try {
+			get_settings_handler()->get_option( 'hmtp_setting' );
+		} catch ( \Exception $e ) {
+			update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
+			return array();
+		}
+		$this->token = get_settings_handler()->get_option( 'hmtp_ga_token' );
+		if ( hmtp_is_network_activated() ) {
+			$ga_redirect_url = network_admin_url( 'settings.php?page=hmtp_settings_page' );
+		} else {
+			$ga_redirect_url = admin_url( 'options-general.php?page=hmtp_settings_page' );
+		}
+
 		$this->settings = wp_parse_args(
-			get_option( 'hmtp_setting', array() ),
+			$options,
 			array(
 				'ga_property_id'         => null,
 				'ga_property_account_id' => null,
 				'ga_property_profile_id' => null,
 				'ga_client_id'           => null,
 				'ga_client_secret'       => null,
-				'ga_redirect_url'        => admin_url( 'options-general.php?page=hmtp_settings_page' ),
+				'ga_redirect_url'        => $ga_redirect_url,
 				'allow_opt_out'          => false,
 				'allow_opt_out_blogs'    => false,
 			)
@@ -108,11 +121,9 @@ class Plugin {
 			$this->settings['ga_redirect_url'] = HMTP_GA_REDIRECT_URL;
 		}
 
-		$this->token = get_option( 'hmtp_ga_token' );
-
 		$this->ga_client = new \Google_Client();
 
-		$this->ga_client->setApplicationName( "WP Top Posts by GA" );
+		$this->ga_client->setApplicationName( 'WP Top Posts by GA' );
 
 		// Visit https://code.google.com/apis/console?api=analytics to generate your
 		// client id, client secret, and to register your redirect uri.
@@ -127,7 +138,7 @@ class Plugin {
 			// Refresh token if necessary
 			if ( $this->ga_client->isAccessTokenExpired() && $this->ga_client->getRefreshToken() ) {
 				$this->ga_client->refreshToken( $this->ga_client->getRefreshToken() );
-				update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
+				get_settings_handler()->update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
 			}
 		}
 
@@ -181,12 +192,14 @@ class Plugin {
 		if ( isset( $_GET['page'] ) && 'hmtp_settings_page' === $_GET['page'] && isset( $_GET['code'] ) ) {
 
 			$this->ga_client->authenticate( sanitize_text_field( $_GET['code'] ) );
-			update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
-
-			wp_safe_redirect( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
+			get_settings_handler()->update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
+			if ( hmtp_is_network_activated() ) {
+				wp_safe_redirect( network_admin_url( 'settings.php?page=hmtp_settings_page' ) );
+			} else {
+				wp_safe_redirect( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
+			}
 			exit;
 		}
-
 	}
 
 	/**
@@ -201,7 +214,6 @@ class Plugin {
 		}
 		return $this->top_posts->get_results( $args );
 	}
-
 }
 
 /**
@@ -238,4 +250,35 @@ function top_blogs_fetch_results( array $args = array() ) {
 		return array();
 	}
 	return Plugin::get_instance()->top_blogs->fetch_results( $args );
+}
+
+/**
+ * Detect network activated.
+ *
+ * @return bool
+ */
+function hmtp_is_network_activated() {
+	// Makes sure the plugin is defined before trying to use it
+	if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+		require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+	}
+	return is_plugin_active_for_network( 'hm-top-posts/hm-top-posts.php' );
+}
+
+function get_settings_handler() {
+
+	static $hmtp_settings_handler = null;
+
+	if ( ! isset( $hmtp_settings_handler ) ) {
+		require_once HMTP_PLUGIN_PATH . '/hmtp.settings-handler.php';
+		require_once HMTP_PLUGIN_PATH . '/hmtp.local-settings-handler.php';
+		require_once HMTP_PLUGIN_PATH . '/hmtp.network-settings-handler.php';
+		if ( hmtp_is_network_activated() ) {
+			$hmtp_settings_handler = new NetworkSettingsHandler();
+		} else {
+			$hmtp_settings_handler = new LocalSettingsHandler();
+		}
+	}
+
+	return $hmtp_settings_handler;
 }

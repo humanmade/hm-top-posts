@@ -50,11 +50,25 @@ class Admin {
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
 		add_action( 'admin_menu', array( $this, 'add_options_pages' ) );
-
+		add_action( 'network_admin_menu', array( $this, 'add_network_options_pages' ) );
+		add_action( 'network_admin_edit_forms_processing', array( $this, 'forms_processing' ) );
 	}
 
 	function add_options_pages() {
-		add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
+		if ( ! hmtp_is_network_activated() ) {
+			add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
+		}
+	}
+
+	function add_network_options_pages() {
+		add_submenu_page(
+			'settings.php',
+			__( 'HM Top Posts', 'ub' ),
+			'Net Top Posts',
+			'manage_network',
+			'hmtp_settings_page',
+			array( $this, 'settings_page' )
+		);
 	}
 
 	/**
@@ -73,7 +87,11 @@ class Admin {
 			delete_option( 'hmtp_setting' );
 			delete_option( 'hmtp_ga_token' );
 
-			wp_safe_redirect( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
+			if ( hmtp_is_network_activated() ) {
+				wp_safe_redirect( network_admin_url( 'settings.php?page=hmtp_settings_page' ) );
+			} else {
+				wp_safe_redirect( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
+			}
 			exit;
 		}
 
@@ -151,42 +169,52 @@ class Admin {
 	 * Output the plugin settings page
 	 */
 	public function settings_page() {
-
+		if ( hmtp_is_network_activated() ) {
+			$action = 'edit.php?action=forms_processing';
+		} else {
+			$action = 'options.php';
+		}
 		?>
-
 		<div class="wrap">
 			<h1>HM Top Posts</h1>
-			<form action="options.php" method="POST">
-
+			<form action="<?php echo esc_url( $action ); ?>" method="POST">
 				<?php
-
 				settings_fields( 'hmtp_settings' );
 				do_settings_sections( 'hmtp_settings_page' );
 				submit_button();
-
 				?>
-
 			</form>
-
 			<?php
 
-			// Demo.
-			$results = get_top_posts( array( 'post_type' => 'any' ) );
+			//Demo.
+			$results = get_top_posts( array( 'post_type' => 'post' ) );
 
+			if ( $this->ga_client->getAccessToken() ) {
+				?>
+				<form action="<?php echo esc_url( $action ); ?>" method="POST">
+					<input type="hidden" name="reset_token" value=" "/>
+
+					<?php
+					settings_fields( 'hmtp_settings' );
+					echo '<p><input type="submit" name="submit" id="submit" class="button button-secondary" value="Reset settings" /></p>';
+					?>
+				</form>
+				<?php
+			}
 			?>
 
-			<h2><?php esc_html_e( 'Top Posts', 'hmtp' ); ?></h2>
-
-			<?php if ( $results ) : ?>
-				<ol>
-				<?php foreach ( $results as $post ) : ?>
-					<li><?php printf( '<a href="%s">%s</a> (%d)', esc_url( get_permalink( $post['post_id'] ) ), esc_html( get_the_title( $post['post_id'] ) ), absint( $post['views'] ) ); ?></li>
-				<?php endforeach; ?>
-			</ol>
-			<?php else : ?>
-				<p>No posts found</p>
+			<?php if ( $this->ga_client->getAccessToken() ) :?>
+				<h2><?php esc_html_e( 'Top Posts', 'hmtp' ); ?></h2>
+				<?php if ( $results ) : ?>
+					<ol>
+						<?php foreach ( $results as $post ) : ?>
+							<li><?php printf( '<a href="%s">%s</a> (%d)', esc_url( get_permalink( $post['post_id'] ) ), esc_html( get_the_title( $post['post_id'] ) ), absint( $post['views'] ) ); ?></li>
+						<?php endforeach; ?>
+					</ol>
+				<?php else : ?>
+					<p>No posts found</p>
+				<?php endif; ?>
 			<?php endif; ?>
-
 		</div>
 
 		<?php
@@ -335,19 +363,45 @@ class Admin {
 	 * @return bool
 	 */
 	public function settings_sanitize( $input ) {
-
 		$input['allow_opt_out'] = isset( $input['allow_opt_out'] );
 
 		// Reset token if client ID / secret change
 		if ( $input['ga_client_id'] !== $this->settings['ga_client_id'] ) {
-			delete_option( 'hmtp_ga_token' );
+			get_settings_handler()->delete_option( 'hmtp_ga_token' );
 		}
 		if ( $input['ga_client_secret'] !== $this->settings['ga_client_secret'] ) {
-			delete_option( 'hmtp_ga_token' );
+			get_settings_handler()->delete_option( 'hmtp_ga_token' );
+		}
+
+		// Reset token if client ID / secret change
+		if ( isset( $_POST['reset_token'] ) ) {
+			get_settings_handler()->delete_option( 'hmtp_ga_token' );
+			exit;
 		}
 
 		return $input;
-
 	}
 
+	public function forms_processing() {
+		// Reset token if client ID / secret change
+		if ( isset( $_POST['reset_token'] ) ) {
+			get_settings_handler()->delete_option( 'hmtp_ga_token' );
+			wp_safe_redirect( network_admin_url( 'settings.php?page=hmtp_settings_page' ) );
+			exit;
+		}
+
+		$options = get_settings_handler()->get_option( 'hmtp_setting' );
+
+		$to_save = array();
+		foreach ( $_POST['hmtp_setting'] as $key => $value ) {
+			if ( 'ga_access_token' === $key ) { continue; }
+			$to_save[ $key ] = $value ? $value : ''; // save raw code - doesn't require sanitization.
+		}
+		$options = wp_parse_args( $to_save, $options );
+		get_settings_handler()->update_option( 'hmtp_setting', $options );
+		wp_safe_redirect( network_admin_url( 'settings.php?page=hmtp_settings_page' ) );
+
+		exit;
+
+	}
 }
