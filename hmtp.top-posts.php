@@ -120,6 +120,8 @@ class Top_Posts {
 	 */
 	public function fetch_results( $args ) {
 
+
+
 		$max_results = apply_filters( 'hmtp_max_results', 1000 );
 
 		// Build up a list of top posts.
@@ -249,5 +251,50 @@ class Top_Posts {
 
 		return $post_id;
 
+	}
+
+	/**
+	 * Gets test data from google analytics.
+	 *
+	 * @param array $args
+	 * @return array
+	 */
+	public function test_request( $args ) {
+		$respond   = array(
+			'success'        => false,
+			'status_message' => '',
+		);
+
+		$args = wp_parse_args( $args, $this->args_defaults );
+
+		$opt_params = array(
+			'dimensions'  => 'ga:hostname,ga:pagePath',
+			'sort'        => '-ga:pageviews',
+			'max-results' => 10,
+			'start-index' => 1,
+		);
+
+		if ( ! empty( $this->args['filters'] ) ) {
+			$opt_params['filters'] = $this->args['filters'];
+		}
+		try {
+			$results = $this->analytics->data_ga->get(
+				'ga:' . $this->ga_property_profile_id,
+				$args['start_date'],
+				$args['end_date'],
+				'ga:pageviews',
+				$opt_params
+			);
+		} catch ( \Exception $e ) {
+			$respond['status_message'] = $e->getMessage();
+		}
+		if ( isset( $results ) && $results->getRows() > 0 ) {
+			$count = $results->getTotalResults();
+			$respond['success'] = true;
+			$respond['status_message'] = "Connection succeeded, $count items founded.";
+		}
+
+
+		return $respond;
 	}
 }

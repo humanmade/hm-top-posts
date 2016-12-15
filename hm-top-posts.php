@@ -128,12 +128,16 @@ class Plugin {
 		$this->ga_client->setScopes( 'https://www.googleapis.com/auth/analytics' );
 
 		if ( $this->token ) {
-			$this->ga_client->setAccessToken( $this->token );
-
-			// Refresh token if necessary
-			if ( $this->ga_client->isAccessTokenExpired() && $this->ga_client->getRefreshToken() ) {
-				$this->ga_client->refreshToken( $this->ga_client->getRefreshToken() );
-				get_settings_handler()->update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
+			try {
+				$this->ga_client->setAccessToken( $this->token );
+				// Refresh token if necessary
+				if ( $this->ga_client->isAccessTokenExpired() && $this->ga_client->getRefreshToken() ) {
+					$this->ga_client->refreshToken( $this->ga_client->getRefreshToken() );
+					get_settings_handler()->update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
+				}
+			} catch ( \Exception $e ) {
+				update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
+				return array();
 			}
 		}
 
@@ -245,6 +249,20 @@ function top_blogs_fetch_results( array $args = array() ) {
 		return array();
 	}
 	return Plugin::get_instance()->top_blogs->fetch_results( $args );
+}
+
+/**
+ * Gets test data.
+ *
+ * @param array $args
+ * @return array
+ */
+function test_request( array $args = array() ) {
+	if ( ! Plugin::get_instance()->top_posts ) {
+		return array();
+	}
+	return Plugin::get_instance()->top_posts->test_request( $args );
+
 }
 
 /**

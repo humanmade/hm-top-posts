@@ -184,13 +184,7 @@ class Admin {
 				submit_button();
 				?>
 			</form>
-			<?php
-
-			//Demo.
-			$results = get_top_posts( array( 'post_type' => 'post' ) );
-
-			if ( $this->ga_client->getAccessToken() ) {
-				?>
+			<?php if ( $this->ga_client->getAccessToken() ) : ?>
 				<form action="<?php echo esc_url( $action ); ?>" method="POST">
 					<input type="hidden" name="reset_token" value=" "/>
 
@@ -199,21 +193,17 @@ class Admin {
 					echo '<p><input type="submit" name="submit" id="submit" class="button button-secondary" value="Reset settings" /></p>';
 					?>
 				</form>
-				<?php
-			}
-			?>
 
-			<?php if ( $this->ga_client->getAccessToken() ) :?>
-				<h2><?php esc_html_e( 'Top Posts', 'hmtp' ); ?></h2>
-				<?php if ( $results ) : ?>
-					<ol>
-						<?php foreach ( $results as $post ) : ?>
-							<li><?php printf( '<a href="%s">%s</a> (%d)', esc_url( get_permalink( $post['post_id'] ) ), esc_html( get_the_title( $post['post_id'] ) ), absint( $post['views'] ) ); ?></li>
-						<?php endforeach; ?>
-					</ol>
+				<?php $results = test_request( array( 'post_type' => 'post' ) ); ?>
+
+				<h2><?php esc_html_e( 'Plugin status', 'hmtp' ); ?></h2>
+				<?php if ( $results['success'] ) : ?>
+					<?php printf( '<p>%s</p>', esc_html( $results['status_message'] ) ); ?>
 				<?php else : ?>
-					<p>No posts found</p>
+					<p>An error ocured, please check an error message below</p>
+					<?php printf( '<p>%s</p>', esc_html( $results['status_message'] ) ); ?>
 				<?php endif; ?>
+
 			<?php endif; ?>
 		</div>
 
@@ -295,8 +285,13 @@ class Admin {
 
 		// If authenticated & api details are provided, show the property select field.
 		else :
+			try {
+				$props = $this->ga_service->management_webproperties->listManagementWebproperties( "~all" );
+			} catch ( \Exception $e ) {
+				update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
+				return array();
+			}
 
-			$props      = $this->ga_service->management_webproperties->listManagementWebproperties( "~all" );
 			$deauth_url = wp_nonce_url( add_query_arg( array() ), 'hmtp_deauth', 'hmtp_deauth' );
 
 			?>
@@ -363,7 +358,7 @@ class Admin {
 	 * @return bool
 	 */
 	public function settings_sanitize( $input ) {
-		$input['allow_opt_out'] = isset( $input['allow_opt_out'] );
+		$input['allow_opt_out'] = isset( $input['allow_opt_out'] ) ? (boolean) $input['allow_opt_out'] : false;
 
 		// Reset token if client ID / secret change
 		if ( $input['ga_client_id'] !== $this->settings['ga_client_id'] ) {
@@ -396,6 +391,9 @@ class Admin {
 		foreach ( $_POST['hmtp_setting'] as $key => $value ) {
 			if ( 'ga_access_token' === $key ) { continue; }
 			$to_save[ $key ] = $value ? $value : ''; // save raw code - doesn't require sanitization.
+		}
+		if ( ! array_key_exists( 'allow_opt_out', $to_save ) ) {
+			$to_save['allow_opt_out'] = false;
 		}
 		$options = wp_parse_args( $to_save, $options );
 		get_settings_handler()->update_option( 'hmtp_setting', $options );
