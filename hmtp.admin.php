@@ -200,7 +200,6 @@ class Admin {
 				<?php if ( $results['success'] ) : ?>
 					<?php printf( '<p>%s</p>', esc_html( $results['status_message'] ) ); ?>
 				<?php else : ?>
-					<p>An error ocured, please check an error message below</p>
 					<?php printf( '<p>%s</p>', esc_html( $results['status_message'] ) ); ?>
 				<?php endif; ?>
 
