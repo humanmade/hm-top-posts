@@ -55,7 +55,7 @@ class Admin {
 	}
 
 	function add_options_pages() {
-		if ( ! hmtp_is_network_activated() ) {
+		if ( ! is_network_activated() ) {
 			add_options_page( 'HM Top Posts', 'Top Posts', 'manage_options', 'hmtp_settings_page', array( $this, 'settings_page' ) );
 		}
 	}
@@ -87,7 +87,7 @@ class Admin {
 			delete_option( 'hmtp_setting' );
 			delete_option( 'hmtp_ga_token' );
 
-			if ( hmtp_is_network_activated() ) {
+			if ( is_network_activated() ) {
 				wp_safe_redirect( network_admin_url( 'settings.php?page=hmtp_settings_page' ) );
 			} else {
 				wp_safe_redirect( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
@@ -169,7 +169,7 @@ class Admin {
 	 * Output the plugin settings page
 	 */
 	public function settings_page() {
-		if ( hmtp_is_network_activated() ) {
+		if ( is_network_activated() ) {
 			$action = 'edit.php?action=forms_processing';
 		} else {
 			$action = 'options.php';

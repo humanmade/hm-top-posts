@@ -84,7 +84,7 @@ class Plugin {
 
 		$options = get_settings_handler()->get_option( 'hmtp_setting' );
 		$this->token = get_settings_handler()->get_option( 'hmtp_ga_token' );
-		if ( hmtp_is_network_activated() ) {
+		if ( is_network_activated() ) {
 			$ga_redirect_url = network_admin_url( 'settings.php?page=hmtp_settings_page' );
 		} else {
 			$ga_redirect_url = admin_url( 'options-general.php?page=hmtp_settings_page' );
@@ -192,7 +192,7 @@ class Plugin {
 
 			$this->ga_client->authenticate( sanitize_text_field( $_GET['code'] ) );
 			get_settings_handler()->update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
-			if ( hmtp_is_network_activated() ) {
+			if ( is_network_activated() ) {
 				wp_safe_redirect( network_admin_url( 'settings.php?page=hmtp_settings_page' ) );
 			} else {
 				wp_safe_redirect( admin_url( 'options-general.php?page=hmtp_settings_page' ) );
@@ -270,7 +270,7 @@ function test_request( array $args = array() ) {
  *
  * @return bool
  */
-function hmtp_is_network_activated() {
+function is_network_activated() {
 	// Makes sure the plugin is defined before trying to use it
 	if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
 		require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
@@ -286,7 +286,7 @@ function get_settings_handler() {
 		require_once HMTP_PLUGIN_PATH . '/hmtp.settings-handler.php';
 		require_once HMTP_PLUGIN_PATH . '/hmtp.local-settings-handler.php';
 		require_once HMTP_PLUGIN_PATH . '/hmtp.network-settings-handler.php';
-		if ( hmtp_is_network_activated() ) {
+		if ( is_network_activated() ) {
 			$hmtp_settings_handler = new NetworkSettingsHandler();
 		} else {
 			$hmtp_settings_handler = new LocalSettingsHandler();
