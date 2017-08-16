@@ -59,7 +59,7 @@ class HMTP_Top_Posts {
 	 */
 	function __construct( $ga_property_profile_id, Google_AnalyticsService $analytics ) {
 
-		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - YEAR_IN_SECONDS/12 );
+		$this->args_defaults['start_date'] = date( 'Y-m-d', time() - YEAR_IN_SECONDS / 12 );
 		$this->args_defaults['end_date']   = date( 'Y-m-d', time() );
 
 		$this->ga_property_profile_id = $ga_property_profile_id;
@@ -73,36 +73,29 @@ class HMTP_Top_Posts {
 	 * @param array $args
 	 * @return array|mixed
 	 */
-	function get_results( Array $args = array() ) {
+	function get_results( array $args = array() ) {
 
 		$args = wp_parse_args( $args, $this->args_defaults );
 
 		// Convert term names to IDs.
-		if ( ! empty( $args['terms'] ) )
+		if ( ! empty( $args['terms'] ) ) {
 			foreach ( $args['terms'] as &$term ) {
-				if ( ! is_numeric( $term ) )
+				if ( ! is_numeric( $term ) ) {
 					$term = get_term_by( 'name', $term, $args['taxonomy'] )->term_id;
+				}
 			}
+		}
 
 		$this->query_id = 'hmtp_' . hash( 'md5', $this->ga_property_profile_id . json_encode( $args ) );
 
-		// If TLC Transients exists, use that.
-		if ( class_exists( 'TLC_Transient' ) ) {
-
-			return tlc_transient( $this->query_id )->expires_in( $this->expiry )->background_only()->updates_with( array( $this, 'fetch_results' ), array( $args ) )->get();
-
-		} else {
-
-			if ( $results = get_transient( $this->query_id ) )
-				return $results;
-
-			$results = $this->fetch_results( $args );
-
-			set_transient( $this->query_id, $results, $this->expiry );
-
+		$results = get_transient( $this->query_id );
+		if ( $results ) {
 			return $results;
-
 		}
+		$results = $this->fetch_results( $args );
+		set_transient( $this->query_id, $results, $this->expiry );
+
+		return $results;
 
 	}
 
@@ -149,8 +142,9 @@ class HMTP_Top_Posts {
 				return;
 			}
 
-			if ( count( $results->getRows() ) < 1 )
+			if ( count( $results->getRows() ) < 1 ) {
 				break;
+			}
 
 			foreach ( $results->getRows() as $result ) {
 
@@ -170,26 +164,30 @@ class HMTP_Top_Posts {
 
 				// If post for given URL can't be found - skip.
 				// This will be the case for most archives.
-				if ( ! $post_id )
+				if ( ! $post_id ) {
 					continue;
+				}
 
 				// GA will return all URL results - try and filter by post type.
 				// Note that it would be far more efficient to filter GA results by using the permalink for the post type.
 				// You can pass this as an arg.
-				if ( ! in_array( get_post_type( $post_id ), (array) $args['post_type'] ) && 'any' !== $args['post_type'] )
+				if ( ! in_array( get_post_type( $post_id ), (array) $args['post_type'] ) && 'any' !== $args['post_type'] ) {
 					continue;
+				}
 
 				// Skip manually hidden.
-				if ( get_post_meta( $post_id, 'hmtp_top_posts_optout', true ) )
+				if ( get_post_meta( $post_id, 'hmtp_top_posts_optout', true ) ) {
 					continue;
+				}
 
 				// If results should be restricted by taxonomy/terms supplied
 				if (
 					! is_null( $args['taxonomy'] ) &&
 					! empty( $args['terms'] ) &&
 					0 == count( array_intersect( wp_get_object_terms( $post_id, $args['taxonomy'], array( 'fields' => 'ids' ) ), $args['terms'] ) )
-				)
+				) {
 					continue;
+				}
 
 				if ( ! empty( $args['filter_callback'] ) ) {
 					if ( ! call_user_func( $args['filter_callback'], $post_id, $result ) ) {
@@ -198,15 +196,15 @@ class HMTP_Top_Posts {
 				}
 
 				// Build an array of $post_id => $pageviews
-				$top_posts[$post_id] = array(
+				$top_posts[ $post_id ] = array(
 					'post_id' => $post_id,
 					'views'   => $result[1],
 				);
 
 				// break when we have enough posts.
-				if ( isset( $top_posts ) && count( $top_posts ) >= $args['count'] )
+				if ( isset( $top_posts ) && count( $top_posts ) >= $args['count'] ) {
 					break;
-
+				}
 			}
 
 			$opt_params['start-index'] += $max_results;

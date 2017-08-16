@@ -102,7 +102,7 @@ class HMTP_Plugin {
 
 		$this->ga_client = new Google_Client();
 
-		$this->ga_client->setApplicationName( "WP Top Posts by GA" );
+		$this->ga_client->setApplicationName( 'WP Top Posts by GA' );
 
 		// Visit https://code.google.com/apis/console?api=analytics to generate your
 		// client id, client secret, and to register your redirect uri.
@@ -111,20 +111,21 @@ class HMTP_Plugin {
 		$this->ga_client->setRedirectUri( $this->settings['ga_redirect_url'] );
 		$this->ga_client->setUseObjects( true );
 
-		if ( $this->token )
+		if ( $this->token ) {
 			$this->ga_client->setAccessToken( $this->token );
-
+		}
 		$this->ga_service = new Google_AnalyticsService( $this->ga_client );
 
 		add_action( 'init', array( $this, 'init' ) );
 
 		$this->admin = new HMTP_Admin( $this->settings, $this->ga_client, $this->ga_service );
 
-		if ( $this->settings['ga_property_profile_id'] )
+		if ( $this->settings['ga_property_profile_id'] ) {
 			$this->top_posts = new HMTP_Top_Posts( $this->settings['ga_property_profile_id'], $this->ga_service );
-
-		if ( $this->settings['allow_opt_out'] )
+		}
+		if ( $this->settings['allow_opt_out'] ) {
 			$this->opt_out = HMTP_Opt_Out::get_instance();
+		}
 
 	}
 
@@ -151,8 +152,9 @@ class HMTP_Plugin {
 	 */
 	public function init() {
 
-		if ( ! current_user_can( 'manage_options' ) )
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
+		}
 
 		// Authenticate.
 		if ( isset( $_GET['code'] ) ) {
@@ -178,7 +180,7 @@ class HMTP_Plugin {
 	 * @param array $args
 	 * @return array|mixed
 	 */
-	public function get_results( Array $args = array() ) {
+	public function get_results( array $args = array() ) {
 		if ( ! is_object( $this->top_posts ) ) {
 			return;
 		}
@@ -193,7 +195,7 @@ class HMTP_Plugin {
  * @param  array $args
  * @return array or top posts.
  */
-function hmtp_get_top_posts( Array $args = array() ) {
+function hmtp_get_top_posts( array $args = array() ) {
 
 	return HMTP_Plugin::get_instance()->get_results( $args );
 
