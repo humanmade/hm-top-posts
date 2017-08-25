@@ -187,6 +187,24 @@ class HMTP_Plugin {
 		return $this->top_posts->get_results( $args );
 	}
 
+	/**
+	 * Fetch GA client
+	 *
+	 * @return object
+	 */
+	public function get_client() {
+		return $this->ga_client;
+	}
+
+	/**
+	 * Fetch GA settings
+	 *
+	 * @return array
+	 */
+	public function get_settings() {
+		return $this->settings;
+	}
+
 }
 
 /**
