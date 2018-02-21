@@ -196,10 +196,14 @@ class HMTP_Top_Posts {
 				}
 
 				// Build an array of $post_id => $pageviews
-				$top_posts[ $post_id ] = array(
-					'post_id' => $post_id,
-					'views'   => $result[1],
-				);
+				if ( isset( $top_posts[ $post_id ] ) ) {
+					$top_posts[ $post_id ]['views'] += $result[1];
+				} else {
+					$top_posts[ $post_id ] = array(
+						'post_id' => $post_id,
+						'views'   => $result[1],
+					);
+				}
 
 				// break when we have enough posts.
 				if ( isset( $top_posts ) && count( $top_posts ) >= $args['count'] ) {
