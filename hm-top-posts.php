@@ -151,13 +151,18 @@ class HMTP_Plugin {
 	 * @todo nonce
 	 */
 	public function init() {
+		global $wp;
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
+		// Check that this is a redirect response from GA - ie that it matches
+		// the ga_redirect_uri setting.
+		$current_request = home_url( $wp->request );
+
 		// Authenticate.
-		if ( isset( $_GET['code'] ) ) {
+		if ( isset( $_GET['code'] ) && $current_request === $this->settings['ga_redirect_uri'] ) {
 
 			$this->ga_client->authenticate();
 			update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
