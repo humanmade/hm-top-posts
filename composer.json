@@ -1,0 +1,20 @@
+{
+	"name": "humanmade/hm-top-posts",
+	"description": "Top Posts. By Google Analytics.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"homepage": "https://github.com/humanmade/hm-top-posts",
+	"readme": "README.md",
+	"authors": [
+		{
+			"name": "Human Made",
+			"homepage": "https://humanmade.com/"
+		}
+	],
+	"require": {
+		"composer/installers": "~1.0"
+	},
+	"require-dev": {
+		"humanmade/coding-standards": "dev-master"
+	}
+}
