@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Get Top Articles by Google Analytics.
  *
@@ -55,15 +56,15 @@ class HMTP_Top_Posts {
 
 	}
 
-	function get_results() {
+	function get_results( $expires = 86400 ) {
 
 		if ( class_exists( 'TLC_Transient' ) ) {
 
 			if ( $this->args['background_only'] )
-				$results = tlc_transient( $this->query_id )->expires_in( 86400 )->background_only()->updates_with( array( $this, 'fetch_results' ) )->get();
+				$results = tlc_transient( $this->query_id )->expires_in( $expires )->background_only()->updates_with( array( $this, 'fetch_results' ) )->get();
 
 			else
-				$results = tlc_transient( $this->query_id )->expires_in( 86400 )->updates_with( array( $this, 'fetch_results' ) )->get();
+				$results = tlc_transient( $this->query_id )->expires_in( $expires )->updates_with( array( $this, 'fetch_results' ) )->get();
 
 			return $results;
 
@@ -74,7 +75,7 @@ class HMTP_Top_Posts {
 
 			$results = $this->fetch_results();
 
-			set_transient( $this->query_id, $results, 86400 );
+			set_transient( $this->query_id, $results, $expires );
 
 			return $results;
 		
@@ -83,6 +84,9 @@ class HMTP_Top_Posts {
 	}
 
 	function fetch_results() {
+
+		global $wpdb;
+		/*@var wpdb $wpdb */
 
 		// If not - lets not bother going any further with this shall we.
 		if ( empty( $this->username ) || empty( $this->password ) )
@@ -102,13 +106,16 @@ class HMTP_Top_Posts {
 		// Keeps going looping through - 30 results at a time - until there are either enough posts or no more results from GA.
 		$top_posts = array();
 		$start_index = 1;
+
+		$results_per_loop = ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) ) ? 1500 : 150;
+
 		while ( count( $top_posts ) < $this->args['count'] ) {
 
-			try {
-				$ga->requestReportData( $this->profile_id, $dimensions, $metrics, '-pageviews', $this->args['filter'], $this->args['start_date'], null, $start_index, 30 );
+ 			try {
+				$ga->requestReportData( $this->profile_id, $dimensions, $metrics, '-pageviews', $this->args['filter'], $this->args['start_date'], null, $start_index, $results_per_loop );
 			} catch( Exception $e ) {
 				update_option( 'hmtp_top_posts_error_message', $e->getMessage() );
-				return;
+				return array();
 			}
 
 			$gaResults = $ga->getResults();
@@ -116,43 +123,57 @@ class HMTP_Top_Posts {
 			if ( empty( $gaResults ) )
 				break;
 
+			$post_names =  array();
+
+			//get the post names from the urls being hit
 			foreach ( $gaResults as $result  ) {
+				$url = apply_filters( 'hmtp_result_url', (string) $result );
+				$url = esc_sql( sanitize_text_field( end( explode( '/', untrailingslashit( reset( explode( '?',  $url ) ) ) ) ) ) );
 
-				// Get the post id from the url
-				// Does not work for custom post types.
-				$post_id = url_to_postid( str_replace( 'index.htm', '', apply_filters( 'hmtp_result_url', (string) $result ) ) );
+				if ( $url )
+					$post_names[$url] = $result->getPageviews();
+			}
 
-				// Does this top url even relate to a post at all?
-				// If your permalink structure clashes with page/category/tag structure it just might.
-				if ( ! $post_id )
+			$posts = $wpdb->get_results( "SELECT * FROM wp_posts WHERE post_name IN ( '". implode( '\', \'', array_keys( $post_names ) ) . "' ) AND post_type IN ( '" .  implode( '\', \'', $this->args['post_type'] ) . "' )" );
+
+			foreach ( $posts as $post )
+				$post_ids[] = (int) $post->ID;
+
+			$opt_outs = $wpdb->get_col( $wpdb->prepare( 'SELECT post_id FROM wp_postmeta WHERE meta_key = %s AND meta_value = %s', 'hmtp_top_posts_optout', 'on' ) );
+
+			if ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) )
+				$posts_in_terms = $wpdb->get_col(
+					"SELECT object_id FROM wp_term_taxonomy INNER JOIN wp_term_relationships ON wp_term_taxonomy.term_taxonomy_id=wp_term_relationships.term_taxonomy_id" .
+					" WHERE taxonomy IN ( '" . $this->args['taxonomy'] . "' ) AND term_id IN ( " . implode( ', ', $this->args['terms'] ) . " ) AND object_id IN ( " . implode( ', ', $post_ids ) . " )"
+				);
+
+			foreach ( $posts as $post ) {
+
+				if ( in_array( $post->ID, $opt_outs ) )
 					continue;
 
-				// This can get confusing if we don't pass explicit post types. Who knows what GA will come up with.
-				if ( ! in_array( get_post_type( $post_id ), $this->args['post_type'] ) )
-					continue;
-
-				if ( get_post_meta( $post_id, 'hmtp_top_posts_optout', true  ) === 'on' )
-					continue;
-
-				// If taxonomy and terms supplied - check if theyre is any intersect between those terms and the post terms.
-				if ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) && 0 == count( array_intersect( wp_get_object_terms( $post_id, $this->args['taxonomy'], array( 'fields' => 'ids') ), $this->args['terms'] ) ) )
+				// If taxonomy and terms supplied - check if there is any intersect between those terms and the post terms.
+				if ( ! is_null( $this->args['taxonomy'] ) && ! empty( $this->args['terms'] ) && ! in_array( $post->ID, $posts_in_terms ) )
 					continue;
 
 				// Build an array of $post_id => $pageviews
-				$top_posts[$post_id] = array(
-					'post_id' => $post_id,
-					'views'   => $result->getPageviews(),
+				$top_posts[(int) $post->ID] = array(
+					'post_id' =>  (int) $post->ID,
+					'views'   => $post_names[$post->post_name],
 				);
 
 				// Once we have enough posts we can break out of this.
 				if ( isset( $top_posts ) && count( $top_posts ) >= $this->args['count'] )
 					break;
-
 			}
 
-			$start_index += 30;
+			$start_index += $results_per_loop;
 
 		}
+
+		uasort( $top_posts, function( $a, $b ) {
+			return $a['views'] < $b['views'];
+		} );
 
 		return $top_posts;
 
