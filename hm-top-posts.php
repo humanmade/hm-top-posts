@@ -7,44 +7,219 @@ Author: Human Made Limited
 Author URI: http://hmn.md
 */
 
+/**
+ * The absolute path to the plugin directory
+ */
 define( 'HMTP_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
-if ( defined( 'HMTP_DISABLE_GA_TOP_POSTS' ) && HMTP_DISABLE_GA_TOP_POSTS )
-	return;
+require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/Google_Client.php';
+require_once HMTP_PLUGIN_PATH . 'google-api-php-client/src/contrib/Google_AnalyticsService.php';
 
-// The google analytics helper class.
-if( ! class_exists( 'gapi' ) )
- 	require_once( 'gapi.class.php' );
+require_once HMTP_PLUGIN_PATH . 'hmtp.class.php';
+require_once HMTP_PLUGIN_PATH . 'hmtp.admin.php';
+require_once HMTP_PLUGIN_PATH . 'hmtp.opt-out.php';
+require_once HMTP_PLUGIN_PATH . 'hmtp.widget.php';
 
-// All the admin settings pages.
-require_once( 'hm-top-posts-admin.php' );
-
-// Meta box to allow authors from opting out of top posts.
-require_once( 'hm-top-posts-opt-out.php' );
-
-// Get Top Posts from google analytics.
-require_once( 'hm-top-posts-ga.php' );
+HMTP_Plugin::get_instance();
 
 /**
- * If there has been an error - show our message
+ * Class HMTP_Plugin
  */
-function hmtp_top_posts_error_messaages()
-{
+class HMTP_Plugin {
 
-	$error = get_option( 'hmtp_top_posts_error_message' );
+	/**
+	 * The class instance.
+	 * @var null
+	 */
+	private static $instance = null;
 
-    if ( ! current_user_can('administrator' ) || ! $error )
-    	return;
+	/**
+	 * The plugin settings.
+	 *
+	 * @var array|null
+	 */
+	private $settings = null;
 
- 	$message = '<strong>Top Posts by Google Analytics Error: ' . $error . '</strong>';
+	/**
+	 * An instance of the Google API class
+	 *
+	 * @var Google_Client
+	 */
+	private $ga_client;
 
-	?>
-	<div id="message" class="error">
-		<p><?php echo $message; ?></p>
-	</div>
-	<?php
+	/**
+	 * An instance of the Google Analytics Service class
+	 * @var Google_AnalyticsService
+	 */
+	private $ga_service;
 
-	delete_option( 'hmtp_top_posts_error_message' );
+	/**
+	 * @var HMTP_Top_Posts
+	 */
+	private $top_posts;
+
+	/**
+	 * @var A
+	 */
+	private $opt_out;
+
+	/**
+	 * @var HMTP_Admin
+	 */
+	private $admin;
+
+	/**
+	 * Initialization
+	 */
+	private function __construct() {
+
+		$this->settings = wp_parse_args(
+			get_option( 'hmtp_setting', array() ),
+			array(
+				'ga_property_id'         => null,
+				'ga_property_account_id' => null,
+				'ga_property_profile_id' => null,
+				'ga_client_id'           => null,
+				'ga_client_secret'       => null,
+				'ga_redirect_url'        => null,
+				'allow_opt_out'          => false,
+			)
+		);
+
+		if ( defined( 'HMTP_GA_CLIENT_ID' ) && HMTP_GA_CLIENT_ID ) {
+			$this->settings['ga_client_id'] = HMTP_GA_CLIENT_ID;
+		}
+
+		if ( defined( 'HMTP_GA_CLIENT_SECRET' ) && HMTP_GA_CLIENT_SECRET ) {
+			$this->settings['ga_client_secret'] = HMTP_GA_CLIENT_SECRET;
+		}
+
+		if ( defined( 'HMTP_GA_REDIRECT_URL' ) && HMTP_GA_REDIRECT_URL ) {
+			$this->settings['ga_redirect_url'] = HMTP_GA_REDIRECT_URL;
+		}
+
+		$this->token = get_option( 'hmtp_ga_token' );
+
+		$this->ga_client = new Google_Client();
+
+		$this->ga_client->setApplicationName( 'WP Top Posts by GA' );
+
+		// Visit https://code.google.com/apis/console?api=analytics to generate your
+		// client id, client secret, and to register your redirect uri.
+		$this->ga_client->setClientId( $this->settings['ga_client_id'] );
+		$this->ga_client->setClientSecret( $this->settings['ga_client_secret'] );
+		$this->ga_client->setRedirectUri( $this->settings['ga_redirect_url'] );
+		$this->ga_client->setUseObjects( true );
+
+		if ( $this->token ) {
+			$this->ga_client->setAccessToken( $this->token );
+		}
+		$this->ga_service = new Google_AnalyticsService( $this->ga_client );
+
+		add_action( 'init', array( $this, 'init' ) );
+
+		$this->admin = new HMTP_Admin( $this->settings, $this->ga_client, $this->ga_service );
+
+		if ( $this->settings['ga_property_profile_id'] ) {
+			$this->top_posts = new HMTP_Top_Posts( $this->settings['ga_property_profile_id'], $this->ga_service );
+		}
+		if ( $this->settings['allow_opt_out'] ) {
+			$this->opt_out = HMTP_Opt_Out::get_instance();
+		}
+
+	}
+
+	/**
+	 * Creates or returns an instance of this class.
+	 *
+	 * @return  A single instance of this class.
+	 */
+	public static function get_instance() {
+
+		if ( null == self::$instance ) {
+			self::$instance = new self;
+		}
+
+		return self::$instance;
+
+	}
+
+	/**
+	 * Handle the authentication & redirect to the admin.
+	 *
+	 * @return null.
+	 * @todo nonce
+	 */
+	public function init() {
+		global $wp;
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Check that this is a redirect response from GA - ie that it matches
+		// the ga_redirect_uri setting.
+		$current_request = home_url( $wp->request );
+
+		// Authenticate.
+		if ( isset( $_GET['code'] ) && $current_request === $this->settings['ga_redirect_uri'] ) {
+
+			$this->ga_client->authenticate();
+			update_option( 'hmtp_ga_token', $this->ga_client->getAccessToken() );
+
+			wp_safe_redirect(
+				add_query_arg(
+					array( 'page' => 'hmtp_settings_page' ),
+					get_admin_url() . 'options-general.php'
+				)
+			);
+
+			exit;
+		}
+
+	}
+
+	/**
+	 * Fetch the top posts
+	 *
+	 * @param array $args
+	 * @return array|mixed
+	 */
+	public function get_results( array $args = array() ) {
+		if ( ! is_object( $this->top_posts ) ) {
+			return;
+		}
+		return $this->top_posts->get_results( $args );
+	}
+
+	/**
+	 * Fetch GA client
+	 *
+	 * @return object
+	 */
+	public function get_client() {
+		return $this->ga_client;
+	}
+
+	/**
+	 * Fetch GA settings
+	 *
+	 * @return array
+	 */
+	public function get_settings() {
+		return $this->settings;
+	}
 
 }
-add_action('admin_notices', 'hmtp_top_posts_error_messaages');
+
+/**
+ * Get Top Posts.
+ *
+ * @param  array $args
+ * @return array or top posts.
+ */
+function hmtp_get_top_posts( array $args = array() ) {
+
+	return HMTP_Plugin::get_instance()->get_results( $args );
+
+}
